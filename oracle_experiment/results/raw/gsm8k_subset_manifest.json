@@ -1,0 +1,192 @@
+{
+  "schema_version": 1,
+  "dataset": "gsm8k",
+  "dataset_id": "openai/gsm8k",
+  "dataset_config": "main",
+  "split": "test",
+  "num_problems": 30,
+  "seed": 42,
+  "dataset_size": 1319,
+  "problems": [
+    {
+      "problem_id": "gsm8k-test-01309",
+      "source_index": 1309,
+      "question_sha256": "5dc76d774bd01a74954bc2acab35f65f9f600d1b6f58bff0a7ba4af83adec48c",
+      "ground_truth": "2280"
+    },
+    {
+      "problem_id": "gsm8k-test-00228",
+      "source_index": 228,
+      "question_sha256": "b26cfbf53406dd4d3c827c592bd0925a246f647a04245d6dbe5fa7e9271777e4",
+      "ground_truth": "1"
+    },
+    {
+      "problem_id": "gsm8k-test-00051",
+      "source_index": 51,
+      "question_sha256": "971dabc5c71b6706fbcb9e063b691f12effce5e1ff53254b4123d7904ab52420",
+      "ground_truth": "5"
+    },
+    {
+      "problem_id": "gsm8k-test-00563",
+      "source_index": 563,
+      "question_sha256": "0dd0b319394d04552520865cfe1e3b296a3764828873df6f98d810841ff3e038",
+      "ground_truth": "12"
+    },
+    {
+      "problem_id": "gsm8k-test-00501",
+      "source_index": 501,
+      "question_sha256": "73dc5c4f78d5497304638113242612d9e7beef23ab500086a3bd47a2746fed5a",
+      "ground_truth": "273"
+    },
+    {
+      "problem_id": "gsm8k-test-00457",
+      "source_index": 457,
+      "question_sha256": "7a9da644d3e1e8b3680a5c6cd25acb11cb2573f5cd755841272f8113dde35453",
+      "ground_truth": "45"
+    },
+    {
+      "problem_id": "gsm8k-test-00285",
+      "source_index": 285,
+      "question_sha256": "46ce7073561764ace4b5738771fa594bc93ee562c5ac3f922ce4538d4715ca8f",
+      "ground_truth": "21"
+    },
+    {
+      "problem_id": "gsm8k-test-00209",
+      "source_index": 209,
+      "question_sha256": "5d6ed708fe4546615db9a393deb23d4c485926e7eff5d7bdc4e4ccdd0c03f25d",
+      "ground_truth": "145"
+    },
+    {
+      "problem_id": "gsm8k-test-01116",
+      "source_index": 1116,
+      "question_sha256": "bca059699200fc8148bca3b76881f8e2e97ca421e2d061ece31fca839423ba6e",
+      "ground_truth": "60"
+    },
+    {
+      "problem_id": "gsm8k-test-00178",
+      "source_index": 178,
+      "question_sha256": "e2c3edfe6881860228f62cbb2dba4a9e84a6beebb1159c7206bb132725343a28",
+      "ground_truth": "122"
+    },
+    {
+      "problem_id": "gsm8k-test-01209",
+      "source_index": 1209,
+      "question_sha256": "a7f615dad911a47af2d48a0c225f9e437f79d3043ad2969e3d981c31fcda8886",
+      "ground_truth": "29"
+    },
+    {
+      "problem_id": "gsm8k-test-00864",
+      "source_index": 864,
+      "question_sha256": "80c6c993731f0b11c9cbb188419d0fec8de3c77caaad1e15da7cea4851f3c727",
+      "ground_truth": "80"
+    },
+    {
+      "problem_id": "gsm8k-test-00065",
+      "source_index": 65,
+      "question_sha256": "78eb7e05b9b667acd8b52f673e2506b36ef073f7b26e85eb1a9ad2dae04df331",
+      "ground_truth": "36"
+    },
+    {
+      "problem_id": "gsm8k-test-00061",
+      "source_index": 61,
+      "question_sha256": "53d5c3c6c081dc8b1074463a29c313de0684581c634cd19bdfa17474f0899a62",
+      "ground_truth": "1430"
+    },
+    {
+      "problem_id": "gsm8k-test-00191",
+      "source_index": 191,
+      "question_sha256": "dfe05fecd5842c0cae1ac39e179b099919e6c99c5a51e812657b8b308c37773e",
+      "ground_truth": "5"
+    },
+    {
+      "problem_id": "gsm8k-test-00447",
+      "source_index": 447,
+      "question_sha256": "edb62873d5a6b883d4d0393935af98e1e9e331b38af4090812341ea509b651c2",
+      "ground_truth": "5"
+    },
+    {
+      "problem_id": "gsm8k-test-00476",
+      "source_index": 476,
+      "question_sha256": "3f3a4cd95f6a07da40b187b96049023038728da003d199eeda741a22dff552ad",
+      "ground_truth": "5"
+    },
+    {
+      "problem_id": "gsm8k-test-01034",
+      "source_index": 1034,
+      "question_sha256": "53509ad959de2fa673d51b9e3978c95375b058e9ab2bb4694eaca530c6b73286",
+      "ground_truth": "66"
+    },
+    {
+      "problem_id": "gsm8k-test-01232",
+      "source_index": 1232,
+      "question_sha256": "471ad40860e85b178e52d4f920bb855a862fe11864eceb266e43e41e674d8667",
+      "ground_truth": "15"
+    },
+    {
+      "problem_id": "gsm8k-test-00054",
+      "source_index": 54,
+      "question_sha256": "13e140ab86daaa95907a1336e9956e8b9ba84bb7d22a4e830e4b5b91c577b6c1",
+      "ground_truth": "40"
+    },
+    {
+      "problem_id": "gsm8k-test-01149",
+      "source_index": 1149,
+      "question_sha256": "a841a33b8d90bdb0e0eea86e5ffe41ae9cc4bba08c80992b6a60564631506d84",
+      "ground_truth": "93"
+    },
+    {
+      "problem_id": "gsm8k-test-00407",
+      "source_index": 407,
+      "question_sha256": "1cb038acd83346246745c392806c3659928178a8ef3f6a41c00d4d148332645c",
+      "ground_truth": "2000"
+    },
+    {
+      "problem_id": "gsm8k-test-00859",
+      "source_index": 859,
+      "question_sha256": "76aaa5245fe3ea8624bb11a5bb0cc5693a39a3962d2a9a2b4c1364de5b599202",
+      "ground_truth": "1520"
+    },
+    {
+      "problem_id": "gsm8k-test-00451",
+      "source_index": 451,
+      "question_sha256": "4e6419841f3b7e3a383e144f2499800717bf7566dfbf154b1400269664711edf",
+      "ground_truth": "11050"
+    },
+    {
+      "problem_id": "gsm8k-test-00919",
+      "source_index": 919,
+      "question_sha256": "7538398121de0c8b64583a6662ba1682fe0e5d84d067a3691588a3eec3f426fa",
+      "ground_truth": "90"
+    },
+    {
+      "problem_id": "gsm8k-test-01206",
+      "source_index": 1206,
+      "question_sha256": "ad6628c18313d944a7fa7626937245bf4d6a515f1c7c070f973a7d4a6c5d6bcd",
+      "ground_truth": "40000"
+    },
+    {
+      "problem_id": "gsm8k-test-00569",
+      "source_index": 569,
+      "question_sha256": "c131504c06e44841b423734dce28ce1d10230ce3744d7f93d62678607f45ea05",
+      "ground_truth": "21"
+    },
+    {
+      "problem_id": "gsm8k-test-00013",
+      "source_index": 13,
+      "question_sha256": "0f494281748adc026d7361db6898808fd97dfe58ffa65f7b91193bfa437474e9",
+      "ground_truth": "18"
+    },
+    {
+      "problem_id": "gsm8k-test-00326",
+      "source_index": 326,
+      "question_sha256": "2c58e20bbc6ee0ee810b5c9cf53ec5a7b2cb6792781602a578d84864bf0b5c76",
+      "ground_truth": "14"
+    },
+    {
+      "problem_id": "gsm8k-test-00865",
+      "source_index": 865,
+      "question_sha256": "9fa70f2dd7a054f455917badddd9f69389ec5d530e05f6df3fd45626018d5bd5",
+      "ground_truth": "23"
+    }
+  ]
+}

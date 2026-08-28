@@ -1,0 +1,6 @@
+{
+  "gsm8k-test-01309": {
+    "status": "manual_review_required",
+    "note": "Question arithmetic appears inconsistent with the official ground-truth rationale. Preserve the raw label and exclude this item from main metrics pending researcher review."
+  }
+}
