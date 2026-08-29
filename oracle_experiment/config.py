@@ -1,8 +1,7 @@
 """Typed configuration for the Oracle Grid Experiment.
 
 Only ``k`` and ``L`` vary within one experiment. All other settings belong to
-one immutable configuration snapshot that later milestones will persist beside
-the results.
+one immutable configuration snapshot persisted beside the results.
 """
 
 from __future__ import annotations

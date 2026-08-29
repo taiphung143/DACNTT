@@ -21,3 +21,29 @@ def pareto_eligible_records(
         if not exclude_flagged or record.get("dataset_quality_flag") is None
     ]
 
+
+def pareto_frontier(
+    records: Sequence[Mapping[str, Any]],
+    *,
+    cost_key: str = "avg_generated_tokens",
+    score_key: str = "final_accuracy",
+) -> list[Mapping[str, Any]]:
+    """Return non-dominated points for lower cost and higher score."""
+
+    frontier: list[Mapping[str, Any]] = []
+    for candidate in records:
+        candidate_cost = float(candidate[cost_key])
+        candidate_score = float(candidate[score_key])
+        dominated = any(
+            float(other[cost_key]) <= candidate_cost
+            and float(other[score_key]) >= candidate_score
+            and (
+                float(other[cost_key]) < candidate_cost
+                or float(other[score_key]) > candidate_score
+            )
+            for other in records
+            if other is not candidate
+        )
+        if not dominated:
+            frontier.append(candidate)
+    return sorted(frontier, key=lambda row: (float(row[cost_key]), -float(row[score_key])))

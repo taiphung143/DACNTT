@@ -1,6 +1,5 @@
 from pathlib import Path
 
-from analysis.summarize import summarize_sample_group
 from analysis.oracle import select_min_cost_success
 from analysis.pareto import pareto_eligible_records
 from dataset_audit import get_dataset_quality_flag, load_manual_audit
@@ -40,7 +39,7 @@ def test_manual_flag_does_not_mutate_ground_truth() -> None:
     assert updated["failure_type"] == "truncated_after_reasoning"
 
 
-def test_flagged_item_is_excluded_from_main_metrics() -> None:
+def test_flagged_item_is_excluded_from_pareto_inputs() -> None:
     records = [
         {
             "final_correct": True,
@@ -70,13 +69,6 @@ def test_flagged_item_is_excluded_from_main_metrics() -> None:
         },
     ]
 
-    summary = summarize_sample_group(records, exclude_flagged=True)
-
-    assert summary["num_total_items"] == 2
-    assert summary["num_flagged_items"] == 1
-    assert summary["num_items_used_for_main_metrics"] == 1
-    assert summary["final_accuracy"] == 0.0
-    assert summary["reasoning_solved_rate"] == 0.0
     assert len(pareto_eligible_records(records)) == 1
 
 

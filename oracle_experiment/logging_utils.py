@@ -2,18 +2,11 @@
 
 from __future__ import annotations
 
-import logging
 import json
+import os
 from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
-
-
-def configure_logging(level: int = logging.INFO) -> None:
-    logging.basicConfig(
-        level=level,
-        format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
-    )
 
 
 def read_json_records(path: Path) -> list[dict[str, Any]]:
@@ -42,3 +35,12 @@ def write_jsonl(path: Path, records: Iterable[dict[str, Any]]) -> None:
             handle.write(json.dumps(record, ensure_ascii=False) + "\n")
     temporary.replace(path)
 
+
+def append_jsonl_record(path: Path, record: dict[str, Any]) -> None:
+    """Durably append one checkpoint record and flush it to disk immediately."""
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8", newline="\n") as handle:
+        handle.write(json.dumps(record, ensure_ascii=False) + "\n")
+        handle.flush()
+        os.fsync(handle.fileno())
