@@ -250,6 +250,69 @@ def load_gsm8k_subset(
     return problems
 
 
+def extend_gsm8k_subset_manifest(
+    *,
+    base_manifest_path: Path,
+    output_manifest_path: Path,
+    num_problems: int,
+    seed: int = GLOBAL_SEED,
+    dataset_config: str = "main",
+    split: str = "test",
+    cache_dir: Path | None = None,
+    dataset_loader: DatasetLoader | None = None,
+) -> list[GSM8KProblem]:
+    """Create a larger manifest while preserving every base problem as a prefix."""
+
+    if output_manifest_path.exists():
+        return load_gsm8k_subset(
+            num_problems=num_problems,
+            seed=seed,
+            dataset_config=dataset_config,
+            split=split,
+            manifest_path=output_manifest_path,
+            cache_dir=cache_dir,
+            dataset_loader=dataset_loader,
+        )
+    base = _read_manifest(base_manifest_path)
+    base_count = int(base.get("num_problems", 0))
+    if num_problems <= base_count:
+        raise ValueError("extended manifest must request more problems than its base")
+    _manifest_indices(
+        base,
+        dataset_config=dataset_config,
+        split=split,
+        num_problems=base_count,
+        seed=seed,
+    )
+
+    loader = dataset_loader or _default_dataset_loader
+    loader_kwargs: dict[str, Any] = {"split": split}
+    if cache_dir is not None:
+        loader_kwargs["cache_dir"] = str(cache_dir)
+    records = loader(HF_DATASET_ID, dataset_config, **loader_kwargs)
+    if num_problems > len(records):
+        raise ValueError(f"requested {num_problems} problems from a dataset of size {len(records)}")
+    base_indices = tuple(int(row["source_index"]) for row in base["problems"])
+    base_problems = [_problem_from_record(records[index], index, split) for index in base_indices]
+    _validate_manifest_records(base, base_problems)
+    remaining = [index for index in range(len(records)) if index not in set(base_indices)]
+    extension_seed = f"gsm8k-manifest-extension-v1|{seed}|{base_count}"
+    extra_indices = random.Random(extension_seed).sample(remaining, num_problems - base_count)
+    problems = base_problems + [
+        _problem_from_record(records[index], index, split) for index in extra_indices
+    ]
+    _write_manifest(
+        output_manifest_path,
+        dataset_config=dataset_config,
+        split=split,
+        num_problems=num_problems,
+        seed=seed,
+        dataset_size=len(records),
+        problems=problems,
+    )
+    return problems
+
+
 def build_argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Load and preview a deterministic GSM8K subset")
     parser.add_argument("--num-problems", type=int, default=NUM_PROBLEMS)

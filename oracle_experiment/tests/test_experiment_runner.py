@@ -93,8 +93,8 @@ def test_resume_skips_completed_samples(tmp_path: Path) -> None:
         audit_entries={},
         resume=True,
     )
-    assert first == {"generated": 4, "skipped": 0, "failed": 0}
-    assert second == {"generated": 0, "skipped": 4, "failed": 0}
+    assert first == {"generated": 4, "cache_hits": 0, "skipped": 0, "failed": 0}
+    assert second == {"generated": 0, "cache_hits": 0, "skipped": 4, "failed": 0}
     assert second_adapter.calls == []
     assert len(latest_checkpoint_records(raw_path)) == 4
 
@@ -138,7 +138,7 @@ def test_failures_are_checkpointed_and_only_retried_explicitly(tmp_path: Path) -
         raw_samples_path=raw_path,
         audit_entries={},
     )
-    assert failed == {"generated": 4, "skipped": 0, "failed": 4}
+    assert failed == {"generated": 4, "cache_hits": 0, "skipped": 0, "failed": 4}
     assert all(
         row["failure_type"] == "generation_error"
         for row in latest_checkpoint_records(raw_path).values()

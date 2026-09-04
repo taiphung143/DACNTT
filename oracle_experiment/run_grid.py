@@ -20,7 +20,7 @@ from config import (
     TOP_P,
     ExperimentConfig,
 )
-from dataset import GSM8KProblem, load_gsm8k_subset
+from dataset import GSM8KProblem, extend_gsm8k_subset_manifest, load_gsm8k_subset
 from dataset_audit import load_manual_audit
 from experiment_runner import (
     build_experiment_manifest,
@@ -32,6 +32,7 @@ from models.transformers_adapter import TransformersModelAdapter
 
 
 DEFAULT_DATASET_MANIFEST = Path("results/raw/gsm8k_subset_manifest.json")
+DEFAULT_GENERATION_CACHE = Path("results/generation_cache.jsonl")
 
 
 def build_argument_parser() -> argparse.ArgumentParser:
@@ -51,6 +52,13 @@ def build_argument_parser() -> argparse.ArgumentParser:
     parser.add_argument("--allow-cpu", action="store_true")
     parser.add_argument("--results-dir", type=Path, default=Path("results"))
     parser.add_argument("--dataset-manifest", type=Path, default=DEFAULT_DATASET_MANIFEST)
+    parser.add_argument(
+        "--extend-dataset-manifest-from",
+        type=Path,
+        help="create a larger manifest whose prefix exactly matches this existing manifest",
+    )
+    parser.add_argument("--generation-cache", type=Path, default=DEFAULT_GENERATION_CACHE)
+    parser.add_argument("--no-generation-cache", action="store_true")
     parser.add_argument("--experiment-id")
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--retry-errors", action="store_true")
@@ -88,9 +96,22 @@ def _read_manifest_problem_count(path: Path) -> int | None:
     return int(value) if value is not None else None
 
 
-def load_staged_problems(config: ExperimentConfig, manifest_path: Path) -> list[GSM8KProblem]:
+def load_staged_problems(
+    config: ExperimentConfig,
+    manifest_path: Path,
+    extend_manifest_from: Path | None = None,
+) -> list[GSM8KProblem]:
     """Load a stable prefix of the fixed manifest for 3/10/30 staged runs."""
 
+    if extend_manifest_from is not None and not manifest_path.exists():
+        return extend_gsm8k_subset_manifest(
+            base_manifest_path=extend_manifest_from,
+            output_manifest_path=manifest_path,
+            num_problems=config.num_problems,
+            seed=config.global_seed,
+            dataset_config=config.dataset_config,
+            split=config.dataset_split,
+        )
     recorded_count = _read_manifest_problem_count(manifest_path)
     if recorded_count is not None and config.num_problems > recorded_count:
         raise ValueError(
@@ -136,7 +157,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.model_backend != "transformers":
         raise ValueError(f"unsupported model backend: {args.model_backend}")
 
-    problems = load_staged_problems(config, args.dataset_manifest)
+    problems = load_staged_problems(config, args.dataset_manifest, args.extend_dataset_manifest_from)
     dataset_manifest_hash = hashlib.sha256(args.dataset_manifest.read_bytes()).hexdigest()
     experiment_id = args.experiment_id or default_experiment_id(
         config, [item.problem_id for item in problems]
@@ -175,6 +196,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         audit_entries=load_manual_audit(config.manual_audit_path),
         resume=args.resume,
         retry_errors=args.retry_errors,
+        generation_cache_path=None if args.no_generation_cache else args.generation_cache,
     )
     print(json.dumps({"experiment_id": experiment_id, **stats}, indent=2))
 

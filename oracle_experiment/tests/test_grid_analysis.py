@@ -1,7 +1,10 @@
+from math import isnan
+
 from analysis.aggregate import build_config_results, build_grid_summary, build_iso_budget_summary
 from analysis.behavior_analysis import classify_problem
 from analysis.oracle import build_oracle_comparison, select_min_cost_success
 from analysis.pareto import pareto_frontier
+from analysis.plots import _number
 
 
 def _sample(problem: str, sample_id: int, *, length: int = 512, answer: str | None = "7", flagged: str | None = None) -> dict:
@@ -47,6 +50,11 @@ def test_grid_summary_excludes_flagged_accuracy_but_keeps_counts() -> None:
     assert summary["num_evaluated_problems"] == 1
     assert summary["num_flagged_problems"] == 1
     assert summary["final_accuracy"] == 1.0
+
+
+def test_plot_number_converts_missing_metrics_to_nan() -> None:
+    assert isnan(_number({"avg_agreement": None}, "avg_agreement"))
+    assert isnan(_number({"avg_agreement": ""}, "avg_agreement"))
 
 
 def test_iso_budget_selects_three_requested_profiles() -> None:

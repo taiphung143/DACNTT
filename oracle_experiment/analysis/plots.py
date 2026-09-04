@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import argparse
 from collections.abc import Mapping, Sequence
+from math import nan
 from pathlib import Path
+from typing import Any
 
 from analysis.aggregate import read_csv, resolve_experiment_dir
 from analysis.heatmap import save_grid_heatmap
@@ -12,7 +14,10 @@ from analysis.pareto import pareto_frontier
 
 
 def _number(row: Mapping[str, Any], key: str) -> float:
-    return float(row[key])
+    value = row.get(key)
+    if value in (None, ""):
+        return nan
+    return float(value)
 
 
 def _label(row: Mapping[str, Any]) -> str:

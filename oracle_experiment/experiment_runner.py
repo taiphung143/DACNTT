@@ -17,6 +17,11 @@ from config import ExperimentConfig
 from dataset import GSM8KProblem
 from dataset_audit import ManualAuditEntry, get_dataset_quality_flag
 from evaluate import evaluate_response
+from generation_cache import (
+    add_generation_to_cache,
+    generation_cache_key,
+    load_generation_cache,
+)
 from logging_utils import append_jsonl_record
 from models.base import ModelAdapter
 from prompts import GSM8K_PROMPT_TEMPLATE, build_gsm8k_prompt
@@ -192,6 +197,7 @@ def create_or_validate_manifest(
             "prompt_hash",
             "k_values",
             "L_values",
+            "num_repetitions",
             "temperature",
             "top_p",
             "enable_thinking",
@@ -220,13 +226,15 @@ def run_shared_sample_pool(
     audit_entries: Mapping[str, ManualAuditEntry],
     resume: bool = False,
     retry_errors: bool = False,
+    generation_cache_path: Path | None = None,
 ) -> dict[str, int]:
     """Generate max(k) samples per problem/L and checkpoint every outcome."""
 
     if raw_samples_path.exists() and not resume:
         raise FileExistsError(f"raw checkpoint exists: {raw_samples_path}; use --resume")
     completed = latest_checkpoint_records(raw_samples_path) if resume else {}
-    generated = skipped = failed = 0
+    generation_cache = load_generation_cache(generation_cache_path)
+    generated = skipped = failed = cache_hits = 0
     max_k = max(config.k_values)
     resolved_revision = getattr(adapter, "resolved_revision", None) or config.model_revision
 
@@ -257,42 +265,69 @@ def run_shared_sample_pool(
                     seed = stable_sample_seed(
                         config.global_seed, problem.problem_id, sample_id, repetition_id
                     )
+                    cache_identity = {
+                        **identity_record,
+                        "seed": seed,
+                        "temperature": config.temperature,
+                        "top_p": config.top_p,
+                        "enable_thinking": config.enable_thinking,
+                    }
+                    cached = generation_cache.get(generation_cache_key(cache_identity))
                     generation_error: str | None = None
-                    try:
-                        generation = adapter.generate(
-                            prompt,
-                            max_new_tokens=length,
-                            temperature=config.temperature,
-                            seed=seed,
-                        )
-                        generation_payload = asdict(generation)
-                        evaluation = evaluate_response(
-                            generation.text,
-                            problem.ground_truth,
-                            finish_reason=generation.finish_reason,
-                            generated_tokens=generation.generated_tokens,
-                            max_new_tokens=length,
-                            dataset_quality_flag=quality_flag,
-                        )
-                    except Exception as exc:  # one failed sample must not abort the grid
-                        generation_error = f"{type(exc).__name__}: {exc}"
+                    if cached is not None:
                         generation_payload = {
-                            "text": "",
-                            "prompt_tokens": 0,
-                            "generated_tokens": 0,
-                            "latency_ms": 0.0,
-                            "finish_reason": "error",
+                            "text": cached.get("text", ""),
+                            "raw_response": cached.get("raw_response", cached.get("text", "")),
+                            "prompt_tokens": int(cached.get("prompt_tokens", 0)),
+                            "generated_tokens": int(cached.get("generated_tokens", 0)),
+                            "latency_ms": float(cached.get("latency_ms", 0.0)),
+                            "finish_reason": cached.get("finish_reason", "stop"),
                         }
                         evaluation = evaluate_response(
-                            "",
+                            str(generation_payload["text"]),
                             problem.ground_truth,
-                            finish_reason="error",
-                            generated_tokens=0,
+                            finish_reason=str(generation_payload["finish_reason"]),
+                            generated_tokens=int(generation_payload["generated_tokens"]),
                             max_new_tokens=length,
-                            generation_error=generation_error,
                             dataset_quality_flag=quality_flag,
                         )
-                        failed += 1
+                        cache_hits += 1
+                    else:
+                        try:
+                            generation = adapter.generate(
+                                prompt,
+                                max_new_tokens=length,
+                                temperature=config.temperature,
+                                seed=seed,
+                            )
+                            generation_payload = asdict(generation)
+                            evaluation = evaluate_response(
+                                generation.text,
+                                problem.ground_truth,
+                                finish_reason=generation.finish_reason,
+                                generated_tokens=generation.generated_tokens,
+                                max_new_tokens=length,
+                                dataset_quality_flag=quality_flag,
+                            )
+                        except Exception as exc:  # one failed sample must not abort the grid
+                            generation_error = f"{type(exc).__name__}: {exc}"
+                            generation_payload = {
+                                "text": "",
+                                "prompt_tokens": 0,
+                                "generated_tokens": 0,
+                                "latency_ms": 0.0,
+                                "finish_reason": "error",
+                            }
+                            evaluation = evaluate_response(
+                                "",
+                                problem.ground_truth,
+                                finish_reason="error",
+                                generated_tokens=0,
+                                max_new_tokens=length,
+                                generation_error=generation_error,
+                                dataset_quality_flag=quality_flag,
+                            )
+                            failed += 1
 
                     record = {
                         **identity_record,
@@ -309,8 +344,19 @@ def run_shared_sample_pool(
                         "temperature": config.temperature,
                         "top_p": config.top_p,
                         "enable_thinking": config.enable_thinking,
+                        "generation_cache_hit": cached is not None,
+                        "generation_cache_source_experiment_id": (
+                            cached.get("source_experiment_id") if cached is not None else None
+                        ),
                     }
                     append_jsonl_record(raw_samples_path, record)
                     completed[key] = record
-                    generated += 1
-    return {"generated": generated, "skipped": skipped, "failed": failed}
+                    if cached is None:
+                        add_generation_to_cache(generation_cache_path, record, generation_cache)
+                        generated += 1
+    return {
+        "generated": generated,
+        "cache_hits": cache_hits,
+        "skipped": skipped,
+        "failed": failed,
+    }

@@ -90,6 +90,40 @@ python -m analysis.plots --experiment <experiment_id>
 python -m analysis.oracle --experiment <experiment_id>
 ```
 
+Phase 1.5 is isolated under the source experiment and is also GPU-free:
+
+```bash
+python analyze_phase1_5.py --experiment qwen3_1_7b_gsm8k_n30
+```
+
+It adds per-problem preferences, actual-token cost accounting, depth-before-
+breadth diagnostics, exact budget-constrained oracle frontiers, paired
+problem-level bootstrap summaries, failure analysis, and researcher-facing
+decision reports under `results/<experiment_id>/phase1_5/`.
+
+Successful generations are reusable across experiment IDs through
+`results/generation_cache.jsonl`. Cache identity includes every generation-
+relevant setting and deliberately excludes `k`. To extend the fixed 30-problem
+manifest while preserving it as an exact prefix, pass both a new
+`--dataset-manifest` and `--extend-dataset-manifest-from`.
+
+Confirmatory runs are intentionally not launched by analysis. After the n30
+cache has been populated by `analyze_phase1_5.py`, the planned commands are:
+
+```bash
+# Dataset scale-up: 840 new generations; 360 reused from n30.
+python run_grid.py --num-problems 100 --num-repetitions 1 \
+  --k-values 1 2 4 --l-values 512 1024 2048 --seed 42 \
+  --dataset-manifest results/raw/gsm8k_subset_manifest_n100.json \
+  --extend-dataset-manifest-from results/raw/gsm8k_subset_manifest.json \
+  --experiment-id qwen3_1_7b_gsm8k_n100_r1
+
+# Stochastic robustness: 720 new generations; repetition 0 reuses 360.
+python run_grid.py --num-problems 30 --num-repetitions 3 \
+  --k-values 1 2 4 --l-values 512 1024 2048 --seed 42 \
+  --experiment-id qwen3_1_7b_gsm8k_n30_r3
+```
+
 ## Artifacts
 
 Every run is isolated under `results/<experiment_id>/`:
@@ -108,6 +142,11 @@ Every run is isolated under `results/<experiment_id>/`:
   ground-truth difficulty classes.
 - `oracle_comparison.csv`: Best Fixed, Breadth-only, Depth-only, and Joint Oracle.
 - `oracle_anchor_evaluation.csv`: all fixed anchors so anchor selection is explicit.
+- `accuracy_intervals.csv`: profile accuracy with Wilson 95% confidence intervals
+  and an explicit small-sample guard.
+- `paired_comparisons.csv`: planned depth, breadth, and iso-budget comparisons
+  using exact paired McNemar tests with Holm correction within each family.
+- `statistical_report.md`: compact interpretation of the inferential artifacts.
 - `demo_cases.md`: compact raw-sample and majority-vote examples.
 - `plots/`: depth, breadth, iso-budget, heatmaps, allocated-vs-realized, Pareto,
   and oracle-headroom figures.
@@ -159,3 +198,9 @@ Results may describe effects observed on this pilot subset: completion,
 truncation, voting, realized compute, profile heterogeneity, and oracle headroom.
 They must not be presented as proof of generalization, causality, true reasoning
 depth, “overthinking,” novelty, or an already implemented adaptive allocator.
+
+The 3/10-item stages are engineering pilots, not inferential experiments. The
+statistical report requires at least 20 clean evaluated problems before it labels
+results inferentially ready. The fixed 30-item run leaves 29 problems after the
+known flagged item is excluded and can detect large paired effects; subtle
+differences may still be inconclusive and require a larger preregistered sample.

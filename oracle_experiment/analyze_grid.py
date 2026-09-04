@@ -12,6 +12,11 @@ from analysis.aggregate import resolve_experiment_dir, run_aggregation, write_cs
 from analysis.behavior_analysis import classify_behaviors
 from analysis.oracle import build_oracle_comparison
 from analysis.plots import generate_plots
+from analysis.statistics import (
+    build_accuracy_intervals,
+    build_paired_comparisons,
+    build_statistical_report,
+)
 from experiment_runner import derive_shared_prefix, latest_checkpoint_records
 
 
@@ -110,6 +115,13 @@ def run_analysis(experiment_dir: Path) -> None:
     oracle_rows, anchor_rows = build_oracle_comparison(config_rows)
     write_csv(experiment_dir / "oracle_comparison.csv", oracle_rows)
     write_csv(experiment_dir / "oracle_anchor_evaluation.csv", anchor_rows)
+    accuracy_rows = build_accuracy_intervals(config_rows)
+    comparison_rows = build_paired_comparisons(config_rows)
+    write_csv(experiment_dir / "accuracy_intervals.csv", accuracy_rows)
+    write_csv(experiment_dir / "paired_comparisons.csv", comparison_rows)
+    (experiment_dir / "statistical_report.md").write_text(
+        build_statistical_report(accuracy_rows, comparison_rows), encoding="utf-8"
+    )
     raw_records = list(latest_checkpoint_records(experiment_dir / "raw_samples.jsonl").values())
     (experiment_dir / "demo_cases.md").write_text(
         build_demo_cases(raw_records, config_rows), encoding="utf-8"

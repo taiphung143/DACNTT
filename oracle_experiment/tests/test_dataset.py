@@ -4,7 +4,7 @@ from typing import Any
 
 import pytest
 
-from dataset import load_gsm8k_subset, select_problem_indices
+from dataset import extend_gsm8k_subset_manifest, load_gsm8k_subset, select_problem_indices
 
 
 def _records() -> list[dict[str, str]]:
@@ -97,3 +97,25 @@ def test_manifest_detects_changed_dataset_record(tmp_path: Path) -> None:
             manifest_path=manifest_path,
             dataset_loader=loader,
         )
+
+
+def test_extended_manifest_preserves_base_as_exact_prefix(tmp_path: Path) -> None:
+    base_path = tmp_path / "base.json"
+    extended_path = tmp_path / "extended.json"
+    loader = _loader_factory(_records())
+    base = load_gsm8k_subset(
+        num_problems=3,
+        seed=42,
+        manifest_path=base_path,
+        dataset_loader=loader,
+    )
+    extended = extend_gsm8k_subset_manifest(
+        base_manifest_path=base_path,
+        output_manifest_path=extended_path,
+        num_problems=7,
+        seed=42,
+        dataset_loader=loader,
+    )
+    assert extended[:3] == base
+    assert len({problem.source_index for problem in extended}) == 7
+    assert json.loads(base_path.read_text(encoding="utf-8"))["num_problems"] == 3
