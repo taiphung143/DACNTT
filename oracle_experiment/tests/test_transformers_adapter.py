@@ -1,6 +1,6 @@
 import pytest
 
-from models.transformers_adapter import infer_finish_reason
+from adaptive_compute.models.transformers_adapter import infer_finish_reason
 
 
 def test_finish_reason_is_length_at_budget() -> None:
@@ -43,4 +43,3 @@ def test_other_finish_reasons(
         )
         == expected
     )
-

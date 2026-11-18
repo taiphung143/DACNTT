@@ -1,0 +1,34 @@
+\chapter*{Tóm tắt}
+\addcontentsline{toc}{chapter}{Tóm tắt}
+
+Việc tăng tài nguyên tính toán tại thời điểm suy luận có thể cải thiện khả năng
+giải toán của mô hình ngôn ngữ bằng hai cách: kéo dài một quỹ đạo sinh hoặc lấy
+nhiều mẫu độc lập rồi tổng hợp câu trả lời. Tuy nhiên, một cấu hình cố định có
+thể lãng phí tài nguyên ở bài dễ và vẫn không đủ cho bài khó. Khóa luận nghiên
+cứu bài toán phân bổ này cho mô hình suy luận mã nguồn mở cỡ nhỏ, không sử dụng
+bộ kiểm chứng ngoài và tính chi phí theo số token thực tế đã sinh.
+
+Nhóm sử dụng Qwen3-0.6B, đóng băng không gian hành động, chính sách và tập Test
+100 câu riêng biệt cho GSM8K và MATH-500 trước khi đánh giá. Các chính sách cố
+định, thích ứng theo số mẫu, thích ứng theo giới hạn token và heuristic kết hợp
+được phát lại trên cùng kho mẫu để so sánh công bằng. Chỉ số chính gồm độ chính
+xác đáp án cuối và số token sinh thực tế; các phân tích bổ sung gồm khoảng tin
+cậy Wilson, kiểm định McNemar ghép cặp, độ trễ, tính hợp lệ và tỷ lệ cắt cụt.
+
+Trên GSM8K, chính sách dừng theo mức đồng thuận tại $L=1024$ đạt độ chính xác
+76\% với trung bình 1.994,52 token, bằng cấu hình cố định $k=4,L=1024$ nhưng
+giảm 21,3\% token. Trên MATH-500, chính sách cố định được chọn từ Validation
+$k=2,L=4096$ đạt 66\%. Heuristic kết hợp chỉ đạt 36\% với 5.788,81 token và kém
+có ý nghĩa thống kê so với chính sách đã chọn. Trong khi đó, đối chứng dừng theo
+đồng thuận tại $L=4096$ đạt 73\%, bằng độ chính xác tổng hợp của
+$k=4,L=4096$ nhưng giảm xấp xỉ 20\% token.
+
+Kết quả không ủng hộ một quy tắc kết hợp chung cho cả hai tập dữ liệu. Bằng
+chứng hiện có cho thấy chính sách cố định theo tập dữ liệu hoặc thích ứng trên
+một trục có thể tạo điểm vận hành tốt hơn. Kết luận được giới hạn ở một seed,
+một họ mô hình chính và hai tập Test-100; các đối chứng non-thinking, điều
+khiển ngân sách suy luận gốc của Qwen3 và budget forcing được xem là đánh giá
+bổ sung, chưa phải bằng chứng đã hoàn thành.
+
+\noindent\textbf{Từ khóa:} test-time compute thích ứng; mô hình suy luận cỡ nhỏ;
+phân bổ breadth--token-cap; suy luận hiệu quả; Qwen3.

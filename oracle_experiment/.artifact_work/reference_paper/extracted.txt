@@ -1,0 +1,705 @@
+
+===== PAGE 1 =====
+Academic Query Orchestration: An AI Agent Framework
+Utilizing RAG and Text-to-SQL
+
+
+ Dinh-Hong Vu1[0000-0001-8513-3942], Duy Vo Minh2[0009-0005-5991-0038], Vinh Truong The 2
+
+  1 Natural Language Processing and Knowledge Discovery Research Group, Faculty of Infor-
+        mation Technology, Ton Duc Thang University, Ho Chi Minh City, Vietnam
+ 2 Faculty of Information Technology, Ton Duc Thang University, Ho Chi Minh City, Vietnam
+        vudinhhong@tdtu.edu.vn, vominhduy.st@tdtu.edu.vn,
+                  52200224@student.tdtu.edu.vn
+             Corresponding author: vominhduy.st@tdtu.edu.vn (Duy Vo Minh),
+                    52200224@student.tdtu.edu.vn (Vinh Truong The)
+
+
+
+       Abstract. University students routinely confront fragmented information ecosys-
+       tems: unstructured documents (e.g., regulations, policies) coexist with structured
+       databases (e.g., individual records), yet most conversational AI systems can han-
+        dle only one modality and thus fail on complex, hybrid queries that re-quire cross-
+       source synthesis. To close this gap, we propose Academic Query Orchestration,
+       a novel AI-agent framework whose core “brain” is guided by a carefully engi-
+       neered Super-Structured Prompt to reason, plan, and orchestrate a Specialized
+       Tool Suite comprising a RAG-based Knowledge Retriever and a safety-hardened
+     SQL Executor. The key innovation lies in the agent’s ability to autonomously
+      decompose hybrid questions and fuse heterogeneous evidence into a coherent
+       answer, reinforced by a feedback loop for self-repair. For rigorous validation, we
+       conduct a comprehensive evaluation on established public benchmarks. Our ap-
+       proach achieves competitive performance on single-modality specialized tasks
+        (including complex Text-to-SQL and knowledge-intensive QA) and—cru-
+        cially—substantially outperforms strong baselines on a challenging benchmark
+        purpose-built for hybrid, multi-source reasoning.
+
+
+      Keywords: Retrieval-Augmented Generation, Text-to-SQL, AI-agent, Natural
+      Language Processing.
+
+1    Introduction
+
+  The ongoing digital transformation in higher education has produced an information
+ecosystem  that  is both complex and fragmented  for  students. Core academic
+knowledge—such as institutional policies, course catalogs, and student handbooks—
+often resides in unstructured formats dispersed across numerous documents and web-
+sites, whereas personal learning data (e.g., grades, timetables, and financial status) is
+secured within structured databases. This fragmentation renders student information
+seeking discontinuous, time-consuming, and error-prone, thereby degrading the student
+===== PAGE 2 =====
+2      Dinh-Hong Vu, Duy Minh Vo and Vinh The Truong
+
+
+experience and increasing operational burden on administrative units [1]. In response,
+conversational AI systems, propelled by recent advances in Large Language Models
+(LLMs), have emerged as a promising paradigm for delivering a unified, real-time ac-
+cess point to institutional and personal information, with substantial potential to im-
+prove accessibility, consistency, and the quality of student support [2].
+  However, directly deploying general-purpose LLMs in this specialized context en-
+tails substantial challenges. LLMs are prone to factual inaccuracies—so-called “hallu-
+cinations”—and their parametric knowledge quickly becomes outdated, rendering them
+unreliable for queries that depend on institution-specific and rapidly evolving policies
+[3]. To mitigate these limitations, Retrieval-Augmented Generation (RAG) has been
+recognized as an effective approach to anchor LLM outputs to authoritative external
+knowledge bases, thereby improving factual accuracy and enabling source verification
+[4]. In parallel, for accessing structured data, the Text-to-SQL task has emerged as a
+central research focus that translates natural-language questions into executable data-
+base queries [5]; notably, the advent of LLMs has substantially reshaped methodologi-
+cal paradigms for this problem. Despite the complementary strengths of RAG (for un-
+structured corpora) and Text-to-SQL (for relational databases), most existing work
+treats them as independent lines of inquiry. Consequently, a significant research gap
+remains in addressing hybrid, compositionally complex queries that require rigorous
+synthesis,  linkage,  and  cross-validation  of  evidence  across  both  unstructured
+knowledge sources and structured database systems.
+  To bridge this gap, we propose Academic Query Orchestration (AQO), a novel AI-
+agent framework tailored to higher-education settings. AQO departs from monolithic
+designs by instantiating the agent as an intelligent orchestrator that leverages a toolbox
+of specialized modules. The toolbox comprises two principal capabilities: (i) a RAG
+module for faithful, citation-aware answers grounded in the university’s unstructured
+knowledge base, and (ii) a safe Text-to-SQL module for executing least-privilege, au-
+ditable queries over students’ structured records. The core innovation lies in the agent’s
+reasoning and action planning: inspired by ReAct-style reasoning-and-acting loops, the
+orchestrator can decompose user requests, select and sequence tools (RAG, Text-to-
+SQL, or a composed pipeline of both), and synthesize retrieved evidence into a single,
+coherent response with source attribution [6]. This orchestration enables principled
+handling of hybrid, compositionally complex queries while maintaining factual ground-
+ing, policy compliance, and end-to-end answer verifiability.
+
+2    Related work
+
+  The application of conversational AI to student services in higher education has long
+been an active research area. Early efforts centered on rule-based chatbots and FAQ-
+style question-answering systems which, while useful within narrow scopes, exhibited
+conversational rigidity and incurred substantial maintenance overhead as content
+evolved [2]. The recent emergence of LLMs marks a significant inflection point, ena-
+bling more sophisticated virtual assistants with fluent natural-language interaction.
+Nevertheless, as discussed by Kasneci et  al. (2023)  [7], these opportunities are
+===== PAGE 3 =====
+                       Academic Query Orchestration: An AI Agent Framework      3
+
+
+accompanied by notable challenges, particularly ensuring factual reliability and do-
+main-specific correctness. A persistent limitation of many existing systems is their ori-
+entation toward delivering general, static information; they typically lack the capability
+to access and interact—securely, in real time—with structured, student-specific data
+(e.g., grades, timetables, enrollment status) that reside within institutional databases.
+  To address the issues of hallucination and stale parametric knowledge LLMs, Re-
+trieval-Augmented Generation (RAG) has been introduced as a breakthrough approach
+[4]. The core principle of RAG is to anchor generation to an authoritative external
+knowledge store: relevant passages are retrieved from a domain corpus and supplied as
+additional context to the LLM, thereby substantially improving factual accuracy and
+enabling source citation—a critical requirement in academic settings. The effectiveness
+of this paradigm has spurred a wave of research and applications across knowledge-
+intensive domains. As summarized in a recent survey by [8], numerous advanced RAG
+techniques have been developed, focusing on optimizing key components such as re-
+trieval, re-ranking, and context integration strategies. Nevertheless, despite its strengths
+for unstructured knowledge, RAG remains fundamentally constrained to text corpora.
+It is not designed to interact directly with structured data or to answer queries requiring
+dynamic, real-time information from relational databases—capabilities that are com-
+monplace in higher-education student services. This gap underscores the need for com-
+plementary mechanisms or integrated architectures that extend RAG to structured data
+access and real-time querying.
+  To address secure access to structured, student-specific data, the Text-to-SQL para-
+digm has emerged as a central research focus. The rise of LLMs has profoundly re-
+shaped this field, shifting from specialized, task-specific training toward leveraging the
+powerful in-context learning capabilities of general-purpose LLMs [5]. Contemporary
+approaches predominantly rely on prompt engineering: the database schema and a small
+set of question–SQL exemplars are provided to guide the model in producing executa-
+ble queries. Recent work has advanced this line further with techniques such as decom-
+posing complex questions and self-repair to improve robustness on difficult tasks [9].
+Despite these gains, current methods operate within a clear boundary: inference is con-
+strained to information encoded in the database schema. As a result, they remain effec-
+tively blind to contextual factors and business rules captured in external, unstructured
+sources—such as policy documents—that are often critical for correct interpretation
+and compliant query formulation.
+  Recognizing the inherent limitations of standalone systems, prior work has explored
+hybrid architectures that combine querying over both structured and unstructured data
+sources [10]. Early attempts, however, typically relied on rule-based routers or rigid
+classifiers to dispatch questions, offering insufficient flexibility to handle composition-
+ally complex queries that require multi-step interactions across heterogeneous sources.
+The recent rise of AI-agent paradigms, catalyzed by LLMs, has enabled a stronger ap-
+proach in which the LLM functions not merely as a text generator but as a reasoning
+“controller” capable of planning and autonomously invoking tools [11]. Foundational
+frameworks such as ReAct demonstrate that combining reasoning and acting allows
+agents to decompose complex problems into sub-tasks and execute them sequentially
+in a principled manner [6]. Nevertheless, a gap remains in the design, implementation,
+===== PAGE 4 =====
+4      Dinh-Hong Vu, Duy Minh Vo and Vinh The Truong
+
+
+and evaluation of an agent that can flexibly orchestrate between RAG and Text-to-SQL
+to address hybrid, structure-rich queries in higher education. Our work directly ad-
+dresses this gap by proposing a complete agent architecture that not only selects appro-
+priate tools contextually but also synthesizes intermediate results into a single, compre-
+hensive answer, thereby offering a practical and novel solution to a high-impact prob-
+lem.
+
+3    Methodology
+
+
+3.1   The AI Agent architecture
+
+
+
+
+
+                          Fig. 1. The AI Agent architecture
+
+   In this section, we present Academic Query Orchestration (AQO), a novel AI-agent
+framework designed to address complex information-seeking tasks in higher-education
+settings. AQO’s core design objective is to instantiate an autonomous agent capable of
+accurately interpreting diverse student queries, devising a structured plan of action, and
+flexibly coordinating specialized tools. In doing so, the system retrieves and synthesizes
+evidence seamlessly from both unstructured knowledge sources (e.g., policy docu-
+ments) and structured databases (e.g., individualized academic records). As illustrated
+in Fig. 1, the architecture is modular and organized into three processing stages that
+emulate an intelligent perception–cognition–action cycle:
+     1.  Perception. A Query Analyst ingests the raw user question, performs prepro-
+         cessing and intent understanding, and decomposes composite requests into ac-
+         tionable sub-tasks.
+     2.  Brain. The agent’s reasoning and planning core, the Orchestrator, consumes
+         the analyzed inputs and produces a structured Action Plan that specifies a se-
+        quence of steps, the tool to invoke at each step, and the corresponding inputs
+         required to resolve the query.
+===== PAGE 5 =====
+                       Academic Query Orchestration: An AI Agent Framework      5
+
+
+     3.  Action. The plan is executed by a toolbox of specialized components, includ-
+        ing a Knowledge Retriever for unstructured corpora and an SQL Executor for
+         structured data access. A Synthesizer then aggregates intermediate results into
+        a single, coherent, and well-formed response.
+  To enhance robustness, AQO incorporates a feedback loop for self-correction: when
+errors or evidence gaps are detected, the agent can revise the plan, adjust tool calls, and
+re-synthesize the final answer. The following subsections provide implementation de-
+tails and design rationales for each architectural component.
+
+
+3.2   The Agent's Core: Meta-Prompt Design and Construction
+
+  At the core of Academic Query Orchestration (AQO) lies a unified Brain, responsi-
+ble for the end-to-end reasoning pipeline—from perception through planning to ac-
+tion—within a single, coherent process. Rather than composing disparate software
+modules, AQO leverages the multitask reasoning capabilities of a Large Language
+Model (LLM) as the orchestration nucleus. This process is governed by a Meta-Prompt,
+a carefully engineered specification that (i) standardizes query analysis (intent parsing
+and decomposition), (ii) enforces safety and compliance constraints, and (iii) automat-
+ically synthesizes an executable Action Plan that specifies step ordering, tool selection,
+and required inputs. This “unified-in-one” design reduces integration complexity, mit-
+igates interface mismatches between components, and enhances the overall consistency
+and auditability of the reasoning–action pipeline.
+
+
+Meta-Prompt Design and Structure
+  The Meta-Prompt is not a single imperative instruction; rather, it functions as a nat-
+ural-language algorithm designed to shape and constrain the LLM’s reasoning process.
+Its design comprises a set of strategic components—each specifying objectives, opera-
+tional constraints, and decision criteria—that collectively govern perception, decompo-
+sition, tool selection, and synthesis. These components are summarized in Table 1.
+
+                       Table 1. Structure of the Meta-Prompt
+
+       Section                   Purpose and Technical Details
+                     Assign the model the role of an “intelligent orchestration AI
+                      agent” with the high-level objective to “analyze the query and
+                     produce an executable action plan in JSON.” This role-play-
+ Role & Task Defi-
+                      ing directive focuses the LLM’s behavior on the specified
+ nition
+                      goal and constrains it from answering the query directly, re-
+                       quiring transformation into a feasible plan instead.
+
+                    Equip the agent with knowledge of its operating environment.
+             A comprehensive database context (db_context)—including
+ Context & Capa-
+                       the schema, table descriptions, and domain/business con-
+ bility Declaration
+                    cepts—is provided to enable sound reasoning over structured
+                         data. In parallel, the capabilities of the RAG tool are supplied
+===== PAGE 6 =====
+6      Dinh-Hong Vu, Duy Minh Vo and Vinh The Truong
+
+                       as a concise rag_summary, allowing the LLM to decide when
+                    and how to invoke retrieval effectively.
+
+                     Provide a stepwise set of reasoning instructions that the LLM
+                    must follow, including: (i) analyzing and decomposing the
+                       user requirement; (ii) aligning sub-tasks with available tool
+                         capabilities and conducting feasibility checks; and (iii) deter-
+                    mining the query_type (e.g., RAG, Text-to-SQL, or hybrid)
+                    and the corresponding execution path. This guidance enforces
+ Chain-of-Thought
+                     a structured decision process, improving the consistency, in-
+ Reasoning In-
+                          terpretability, and auditability of the agent’s actions. Cru-
+ structions
+                           cially, this section also includes the execution_history, which
+                       contains the outcomes of previous failed attempts. The LLM
+                            is explicitly instructed to learn from these past errors (e.g.,
+                        tool failures, insufficient information) and to generate a new,
+                       revised plan that avoids repeating the same mistakes.
+
+                   Impose a hard requirement that the LLM must return a single
+                JSON code block conforming to a predefined schema. The
+                   schema mandates specific keys (e.g., query_type, explana-
+ Structured Out-      tion, sql_query, and keywords_for_rag) and disallows extra-
+ put Constraint      neous fields or free-form text. This constraint is critical to en-
+                       sure the Brain’s output is machine-parseable, deterministic,
+                    and directly executable, thereby enabling reliable downstream
+                     automation and orchestration.
+
+
+The Action Plan Generation Algorithm
+
+   Building on the foregoing design, we formalize the end-to-end procedure that trans-
+forms a user query into a structured Action Plan in Table 2. The algorithm specifies
+not only the LLM invocation but also explicit logical and semantic validation steps—
+covering intent parsing, task decomposition, tool-capability alignment, safety/compli-
+ance checks, and schema conformance of the single JSON output. These validations
+ensure the resulting plan is consistent, complete, and executable, thereby preserving the
+integrity of downstream orchestration.
+
+                        Table 2. Pseudocode for Algorithm 1
+
+ Algorithm 1. Action Plan Generation via Meta-Prompt
+ Input:
+      user_query: The raw natural language query.
+      db_context: String containing the database context.
+     rag_summary: String summarizing RAG capabilities.
+      execution_history: A list of strings describing the outcomes of previous failed
+ attempts.
+===== PAGE 7 =====
+                       Academic Query Orchestration: An AI Agent Framework      7
+
+
+      valid_query_type: A set of allowed query types, e.g., {"sql_only", "rag_only",
+ "hybrid"}
+ Output:
+      action_plan: A validated JSON object representing the action plan.
+      Error: If the process fails at any stage.
+  // Step 1: Construct the Meta-Prompt
+ meta_prompt ← BuildMetaPrompt(user_query, db_context, rag_summary, execu-
+ tion_history)
+  // Step 2: Invoke the Large Language Model (LLM)
+ action_plan ← CallLLM(meta_prompt)
+  // Step 3: Semantic and Logical Validation of the Plan
+          // 3a. Validate the query type
+          // 3b. Assess the presence of required fields
+          // 3c. Check consistency based on query type
+  if NOT IsPlanValid(action_plan, valid_query_type) then return Error("Generated
+ plan is invalid or inconsistent") end if
+  // Step 4: Return the fully validated Action Plan
+ return action_plan
+
+
+3.3   Action Layer: Parallel Tool Execution and Synthesis
+
+   After the Agent’s “brain” produces the Action Plan, it is handed off to the Action
+Layer for execution. This layer is responsible for orchestrating calls to specialized tools,
+managing and validating their intermediate outputs, and ultimately synthesizing the re-
+trieved evidence into a coherent final response. The operational workflow of the Action
+Layer is formally specified in Table 3.
+
+                        Table 3. Pseudocode for Algorithm 2
+
+ Algorithm 2. Action Layer Execution and Synthesis
+ Input:
+      user_query: The raw natural language query.
+      db_context: String containing the database context.
+     rag_summary: String summarizing RAG capabilities.
+      valid_query_type: A set of allowed query types, e.g., {"sql_only", "rag_only",
+ "hybrid"}
+      max_iterations: The maximum number of self-correction attempts (e.g., 3).
+ Output:
+      final_answer: The natural language response to the user.
+ execution_history ← []
+ final_answer_text ← NULL
+ action_plan ← Algorithm 1(user_query, db_context, rag_summary, execution_his-
+ tory, valid_query_type)
+ loop: current_iteration from 1 to max_iterations
+          // Initialize result and error variables
+       retrieved_evidence ← null
+===== PAGE 8 =====
+8      Dinh-Hong Vu, Duy Minh Vo and Vinh The Truong
+
+
+       sql_data ← null
+          // Step 1: Execute tools based on the plan, potentially in parallel
+         if action_plan.query_type IN {"rag_only","hybrid"} then
+           retrieved_evidence←CallTool(Knowledge_Retriever,action_plan.key-
+ word_RAG)
+      end if
+         if action_plan.query_type IN {"sql_only","hybrid"} then
+            sql_data ← CallTool(SQL_Executor, action_plan.sql_query)
+      end if
+          // Step 2: Handle tool execution errors
+         if retrieved_evidence IS Error OR sql_data IS Error then
+             errors ← GetErrors(retrieved_evidence, sql_data)
+            execution_history.add(errors)
+            action_plan ← Algorithm 1(user_query, db_context, rag_summary, ex-
+ ecution_history, valid_query_type)
+           goto loop
+      end if
+          // Step 3: Synthesize the final answer
+      synthesis_prompt←BuildSynthesisPrompt(user_query,retrieved_evidence,
+ sql_data)
+       final_answer_text ← CallLLM(synthesis_prompt)
+          // Step 4: Validate sufficiency of the synthesized answer
+         if IsAnswerInsufficient(final_answer_text) then
+            execution_history.add("Not enough information.")
+            action_plan ← Algorithm 1(user_query, db_context, rag_summary, ex-
+ ecution_history, valid_query_type)
+           goto loop
+       else
+                  // Step 5: Return the final answer to the user
+             return final_answer_text
+      end if
+ end loop
+ final_answer_text ← "Sorry, I was unable to process your request. Please try again."
+ return final_answer_text
+
+
+Specialized Tool Suite
+     1.  Knowledge Retriever. Activated when mandated by the query_type, this com-
+        ponent accepts a list of keywords, conducts similarity search over the Unstruc-
+         tured Knowledge Corpus, and returns a set of relevant text passages.
+     2.  SQL Executor. Invoked when required by the query_type, this component ac-
+         cepts an SQL statement, validates it through a Safety Layer to prevent hazard-
+        ous commands, and then executes it against the relational database. In the pres-
+        ence of syntax errors, it returns a structured Error object.
+
+
+Synthesis and Feedback Generation
+===== PAGE 9 =====
+                       Academic Query Orchestration: An AI Agent Framework      9
+
+
+  As outlined in Steps 3–5 of Table 3, all gathered evidence—namely retrieved_evi-
+dence and sql_data—is passed to a Synthesizer, instantiated as a final LLM call. This
+call consolidates the inputs into a coherent, well-formed answer. A terminal validation
+step, IsAnswerInsufficient, then inspects the response for linguistic markers indicative
+of missing or inadequate information. If such markers are detected, a feedback signal
+is propagated to the Agent’s “brain,” thereby closing the self-repair loop.
+
+4    Experiments
+
+
+4.1   Evaluation Benchmarks
+
+
+WikiEval Dataset
+  To assess a pivotal aspect of our RAG module—its ability to generate factually faith-
+ful responses—we employ the WikiEval benchmark, a dataset recognized and inte-
+grated into advanced RAG evaluation frameworks such as RAGAS [12]. Unlike tradi-
+tional QA datasets, WikiEval is formulated as a verification task: each instance com-
+prises (i) a source passage and (ii) a generated claim, with a label indicating the rela-
+tionship between them—Supported, Contradicted, or Not Enough Information (NEI).
+This is well aligned with our study because it enables direct measurement of the sys-
+tem’s capacity to produce answers that are not only relevant but also strictly grounded
+in retrieved context from the Unstructured Knowledge Corpus. In our setup, the text
+chunks returned by the Knowledge Retriever serve as the source passages, while the
+system’s RAG-only answer is treated as the claim to be verified, allowing us to quantify
+factual faithfulness and systematically mitigate hallucination risk. Complementing this
+verification, we use RAGAS to characterize the end-to-end pipeline with four key met-
+rics: Faithfulness (the degree to which the answer adheres to the retrieved context, cap-
+turing hallucinations), Answer Relevancy (how tightly the answer remains focused on
+the original question), Context Precision (whether the retrieved passages are truly nec-
+essary to support the answer, penalizing over-retrieval), and Context Recall (the re-
+triever’s ability to surface all evidence required, penalizing under-coverage). Together,
+WikiEval and these RAGAS metrics provide convergent evidence on factual ground-
+ing, answer focus, and retrieval quality.
+
+
+HotpotQA Dataset
+  To evaluate the framework’s capacity for deep reasoning and handling complex in-
+formation flows, we conduct experiments on HotpotQA [14], a multi-hop question-
+answering benchmark deliberately constructed so that each question cannot be an-
+swered from a single passage. Instead, a system must locate and connect dispersed
+“pieces” of evidence across multiple documents to infer the final answer. This design
+provides a stringent test of the Agent’s planning and coordination abilities: it probes
+not only the retrieval effectiveness of the Knowledge Retriever, but also the Orchestra-
+tor’s ability to determine when additional evidence is required and the Synthesizer’s
+ability to integrate supporting facts coherently. System performance  is assessed
+===== PAGE 10 =====
+10     Dinh-Hong Vu, Duy Minh Vo and Vinh The Truong
+
+
+comprehensively using the benchmark’s four official metrics: (i) Exact Match (EM),
+the percentage of predictions that exactly match the gold answer at the character level;
+(ii) F1, a more permissive word-level overlap measure capturing agreement for longer
+answers; (iii) Precision, the fraction of words in the prediction that also appear in the
+gold answer; and (iv) Recall, the fraction of words in the gold answer that are recovered
+by the prediction. Collectively, these metrics enable a holistic appraisal of accuracy,
+coverage, and reasoning consistency across the end-to-end pipeline.
+
+
+Spider Dataset
+  To rigorously evaluate the capability of the SQL Executor, we adopt the Spider
+benchmark [13], widely regarded as the gold standard for complex Text-to-SQL tasks.
+Spider comprises thousands of questions spanning hundreds of cross-domain databases
+that the model has not previously seen, compelling the system to generate high-com-
+plexity SQL, typically involving multi-table JOINs, GROUP BY, ORDER BY, and
+nested queries, thereby closely mirroring real-world requirements. This setup enables
+quantitative assessment of two core competencies of the underlying LLM (Gemini): (i)
+accurately interpreting previously unseen relational schemas, and (ii) faithfully trans-
+lating natural-language questions into SQL statements that are correct in both syntax
+and semantics. Performance is measured using Spider’s two official, stringent metrics:
+Execution Accuracy (EX)—which compares the execution result of the generated query
+with that of the ground-truth query—and Exact Match (EM)—which requires the gen-
+erated SQL to match the reference query verbatim.
+
+
+4.2   Experiment Results
+
+  To assess the impact of the underlying large language model (LLM) on the frame-
+work’s overall performance, we conducted a head-to-head evaluation of two state-of-
+the-art models from Google: Gemini 2.5 Pro, the flagship model with strong complex
+reasoning capabilities, and Gemini 2.5 Flash, a lighter variant optimized for speed and
+cost efficiency. Both models were deployed within the same system architecture and
+operated under an identical Superstructure Prompt to ensure a fair comparison. We rec-
+orded and analyzed accuracy and latency metrics to quantitatively characterize differ-
+ences in reasoning effectiveness and real-time performance between the two configu-
+rations.
+
+
+Knowledge Retriever Evaluation
+
+WikiEval Dataset
+  The evaluation on the WikiEval benchmark (Table 4) shows that our framework,
+under both base-model configurations, achieves exceptionally high factual faithful-ness
+(>0.98), underscoring the effectiveness of the RAG architecture in mitigating halluci-
+nation. A noteworthy trade-off, however, emerges across other metrics: the Gemini 2.5
+Pro configuration attains substantially higher scores on context-sensitive measures
+(context_precision and context_recall), indicating that the Orchestrator and Synthesizer
+===== PAGE 11 =====
+                       Academic Query Orchestration: An AI Agent Framework     11
+
+
+effectively leverage Pro’s stronger long-context reasoning to select and comprehen-
+sively cover the retrieved evidence. Conversely—and somewhat unexpectedly—the
+Gemini 2.5 Flash configuration delivers better answer_relevancy, plausibly reflecting
+a tendency to produce more direct and succinct responses. Relative to prior RAG base-
+lines, our system markedly surpasses RAG_Mistral-FP16 [19] (faithfulness 0.67, an-
+swer relevancy 0.90) and RAG_Llama3 [19] (faithfulness 0.76, answer relevancy 0.87)
+in factual faithfulness (Table 5), while remaining competitive on answer relevancy—
+especially with the Flash configuration. Taken together, these findings suggest that the
+proposed architecture is both flexible and robust: Gemini 2.5 Pro is preferable for tasks
+demanding complex contextual reasoning, while Gemini 2.5 Flash offers a cost-effi-
+cient alternative that still yields highly focused answers, further validating the strength
+of the coordination mechanism at the core of the framework.
+
+        Table 4. Performance of the Knowledge Retriever on the WikiEval Dataset
+
+                                  Faith-    Answer     Context    Context
+ Model
+                                   fulness   Relevancy   Precision    Recall
+ AQO_Gemini 2.5 Flash (Ours)    0.9805     0.9010      0.8166     0.9776
+ AQO_Gemini 2.5 Pro (Ours)      0.9850     0.8683      0.9337     0.9831
+
+                 Table 5. Performance of Models on the WikiEval Dataset
+
+ Model                                Faithfulness     Answer Relevancy
+ AQO_Gemini 2.5 Flash (Ours)            0.9805              0.9010
+ AQO_Gemini 2.5 Pro (Ours)              0.9850              0.8683
+ RAG_Mistral-FP16 [19]                    0.67                 0.90
+ RAG_Llama3 [19]                         0.76                 0.87
+
+HotpotQA Dataset
+  The HotpotQA evaluation (Table 6) shows that our AI-Agent framework (AQO) is
+effective for multi-hop reasoning in a strict zero-shot setting (no HotpotQA fine-tun-
+ing). With Gemini 2.5 Pro as the base LLM, AQO attains 63.10% EM and 75.87% F1,
+outperforming the Gemini 2.5 Flash configuration (60.17% EM, 73.34% F1) across all
+metrics (Precision: 77.94% vs. 75.17%; Recall: 77.10% vs. 74.73%). It is important to
+note in Table 7 that SAE-large [17] (66.92% EM, 79.62% F1) and HGN [18] (66.07%
+EM, 79.36% F1) are single-model systems explicitly designed and supervised for multi-
+hop reasoning on this task domain; their ~3–4 point advantage aligns with specialized
+architectures and task-specific training. In contrast, AQO is a general-purpose orches-
+tration and synthesis architecture: the Orchestrator plans deeper retrieval, the self-repair
+loop mitigates tool failures, and the Synthesizer coherently integrates dispersed evi-
+dence—all without task-specific fine-tuning. Achieving >73% F1 even with the lighter
+Flash variant, and approaching supervised baselines with Pro, indicates that AQO ro-
+bustly converts the intrinsic reasoning capacity of general LLMs into tangible multi-
+hop QA performance.
+===== PAGE 12 =====
+12     Dinh-Hong Vu, Duy Minh Vo and Vinh The Truong
+
+
+        Table 6. Performance of the Knowledge Retriever on the HotpotQA Dataset
+
+ Model                       Exact Match  F1 Score   Precision   Recall
+ AQO_Gemini 2.5 Flash (Ours)      0.6017       0.7334     0.7517    0.7473
+ AQO_Gemini 2.5 Pro (Ours)        0.6310       0.7587     0.7794    0.7710
+
+                Table 7. Performance of Models on the HotpotQA Dataset
+
+ Model                           Exact Match           F1 Score
+ AQO_Gemini 2.5 Flash (Ours)          0.6017                 0.7334
+ AQO_Gemini 2.5 Pro (Ours)            0.6310                 0.7587
+ SAE-large [17]                        0.6692                 0.7962
+ HGN [18]                             0.6607                 0.7936
+
+
+SQL Executor Evaluation
+
+Spider Dataset
+   Results on the Spider Text-to-SQL benchmark are summarized in Fig. 2. The com-
+parative plots report performance for Gemini 2.5 Pro and Gemini 2.5 Flash, both in
+standalone inference and when embedded within our AI-Agent framework (AQO).
+Three findings emerge: (i) Gemini 2.5 Pro substantially outperforms Gemini 2.5 Flash
+in producing complex SQL— in standalone mode, Pro attains 77.8% Execution Accu-
+racy (EA), markedly higher than Flash at 55.2% EA, with the gap widening on the hard
+and extra subsets, indicating that Pro’s stronger reasoning better handles multi-table
+JOINs and nested queries; (ii) integrating the models into AQO yields consistent gains,
+attributable to the framework’s Super-Prompt structure that provides explicit reasoning
+instructions and well-scaffolded context—Flash improves from 55.2% to 61.5% EA
+(+6.3 pts), while Pro rises from 77.8% to 80.0% EA;
+===== PAGE 13 =====
+                       Academic Query Orchestration: An AI Agent Framework     13
+
+
+                Fig. 2. Performance of the SQL Executor on the Spider Dataset
+
+and (iii) the best overall system within our study is Gemini 2.5 Pro + AQO at 80.0%
+EA, with particularly strong results on the easy and medium subsets (89.1% and 81.0%,
+respectively). For broader context on Execution Accuracy (Table 8), N-Best Hypothe-
+ses Reranking for Text-To-SQL Systems [15] achieves 80.6% EA, while G³R +
+LGESQL + ELECTRA [16] achieves 78.1% EA; thus, our 80.0% EA is competitive
+with the former and clearly exceeds the latter. Although performance declines on the
+extra-difficulty subset—a known challenge for contemporary Text-to-SQL systems—
+the results indicate that the agentic architecture not only coordinates tools but also aug-
+ments base-model capabilities in a principled and reproducible manner.
+
+                  Table 8. Performance of Models on the Spider Dataset
+
+ Model                             Execution Accuracy    Exact Match
+ Baseline_Gemini 2.5 Flash                   0.552               0.513
+ Baseline_Gemini 2.5 Pro                     0.778               0.764
+ AQO_Gemini 2.5 Flash (Ours)                0.615               0.696
+ AQO_Gemini 2.5 Pro (Ours)                 0.800               0.798
+ N-best List Rerankers + PICARD [15]          0.806               0.764
+ G³R + LGESQL + ELECTRA [16]            0.781               0.781
+
+
+5    Practical Examples
+
+  We analyze the information system of Ton Duc Thang University (TDTU) as a rep-
+resentative organizational setting to illustrate data use in practice. The system is gov-
+erned by a tight integration of two principal data modalities. Structured data—managed
+in relational database systems—supports routine operations by maintaining clearly
+identified and well-organized records, including student demographics and contact de-
+tails, course and curriculum metadata, timetables, and longitudinal aca-demic outcomes
+(e.g., grades and accumulated credits). This layer enables reliable querying and auto-
+mation of core workflows such as course registration, academic-probation checks, and
+GPA computation.
+
+   In parallel, unstructured data—preserved as institutional documents and communi-
+cations (e.g., PDFs, word-processing files, policy notices)—encodes the normative and
+procedural framework for decision-making, encompassing academic and exami-nation
+regulations, student-affairs policies, tuition and scholarship rules, and de-tailed admin-
+istrative guidelines. Operational coherence emerges from the interplay between these
+layers: rules articulated in documents are operationalized as logical constraints that
+guide queries over structured repositories, thereby ensuring con-sistency, compliance,
+and auditability. Fig. 3 illustrates this dynamic with three representative scenarios, each
+necessitating a distinct data-handling paradigm: (case 1) a SQL-only strategy for que-
+rying structured databases; (case 2) a RAG-only strat-egy for retrieving information
+===== PAGE 14 =====
+14     Dinh-Hong Vu, Duy Minh Vo and Vinh The Truong
+
+
+from unstructured policy documents; and (case 3) a hybrid strategy that synthesizes
+both sources to address complex inquiries.
+
+
+
+
+
+ Fig. 3. Use-case scenarios demonstrating different data retrieval strategies in a university's stu-
+                                 dent information system.
+
+6    Conclusion
+
+   In this work, we introduced Academic Query Orchestration, a novel AI-agent frame-
+work for addressing complex hybrid question answering in higher-education settings.
+Powered by a Super-Structured Prompt, the agent’s coordinating “brain” autonomously
+decomposes user queries, orchestrates knowledge retrieval (RAG) and safe SQL exe-
+cution, and synthesizes the resulting evidence into coherent responses. Empirical results
+on public benchmarks validate the effectiveness of this integrated approach and demon-
+strate advantages over single-capability systems.
+  While overall performance depends on the underlying LLM, our findings establish
+a viable path toward more capable academic assistants for students. Future directions
+include (i) performance optimization across retrieval and execution stages, (ii) expand-
+ing the Specialized Tool Suite to cover additional modalities and services, and (iii) en-
+dowing the agent with proactive abilities (e.g., anticipation, clarification, and initiative)
+under appropriate safety and governance constraints.
+===== PAGE 15 =====
+                       Academic Query Orchestration: An AI Agent Framework     15
+
+References
+
+ 1. Benavides, L.M.C. et al.: Digital Transformation in Higher Education Institutions: A Sys-
+    tematic  Literature  Review.  Sensors  (Basel,  Switzerland).  20,  11,  3291  (2020).
+     https://doi.org/10.3390/s20113291.
+ 2. Winkler, R., Soellner, M.: Unleashing the Potential of Chatbots in Education: A State-Of-
+    The-Art  Analysis. Academy  of Management  Proceedings.  2018,  1, 15903  (2018).
+     https://doi.org/10.5465/ambpp.2018.15903abstract.
+ 3.  Ji,  Z.  et  al.:  Survey  of  Hallucination  in  Natural  Language  Generation,  (2022).
+     https://doi.org/10.48550/arxiv.2202.03629.
+ 4. Lewis, P. et al.: Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks,
+     (2020). https://doi.org/10.48550/arxiv.2005.11401.
+ 5.  Liu, X. et al.: A Survey of Text-to-SQL in the Era of LLMs: Where are We, and Where are
+   We Going? IEEE Transactions on Knowledge and Data Engineering. 1–20 (2025).
+     https://doi.org/10.1109/tkde.2025.3592032.
+ 6. Yao, S. et al.: ReAct: Synergizing Reasoning and Acting in Language Models, (2022).
+     https://doi.org/10.48550/arxiv.2210.03629.
+ 7. Kasneci, E. et al.: ChatGPT for good? On opportunities and challenges of large language
+    models  for  education.  Learning  and  Individual  Differences.  103, 102274  (2023).
+     https://doi.org/10.1016/j.lindif.2023.102274.
+ 8. Gao, Y. et al.: Retrieval-Augmented Generation for Large Language Models: A Survey,
+     (2023). https://doi.org/10.48550/arxiv.2312.10997.
+ 9.  Rafiei, D., Pourreza, M.: DIN-SQL: Decomposed In-Context Learning of Text-to-SQL with
+     Self-Correction, (2023). https://doi.org/10.48550/arxiv.2304.11015.
+10. Diefenbach, D. et al.: Core techniques of question answering systems over knowledge bases:
+    a   survey.  Knowledge  and   Information   Systems.   55,   3,  529–569   (2017).
+     https://doi.org/10.1007/s10115-017-1100-y.
+11. Schick, T. et al.: Toolformer: Language Models Can Teach Themselves to Use Tools,
+     (2023). https://doi.org/10.48550/arxiv.2302.04761.
+12.  Es, S. et al.: Ragas: Automated Evaluation of Retrieval Augmented Generation, (2023).
+     https://doi.org/10.48550/arxiv.2309.15217.
+13. Chen, Y. et al.: Spider: A Large-Scale Human-Labeled Dataset for Complex and Cross-
+    Domain     Semantic      Parsing     and     Text-to-SQL      Task,      (2018).
+     https://doi.org/10.48550/arxiv.1809.08887.
+14. Yang, Z. et al.: HotpotQA: A Dataset for Diverse, Explainable Multi-hop Question Answer-
+     ing. Presented at the January 1 (2018). https://doi.org/10.18653/v1/d18-1259.
+15. Lu,  Z.  et  al.:  N-Best  Hypotheses  Reranking  for Text-To-SQL  Systems,  (2022).
+     https://doi.org/10.48550/arxiv.2210.10668.
+16. Xiang, Y. et al.: G3R: A Graph-Guided Generate-and-Rerank Framework for Complex and
+    Cross-domain Text-to-: A Graph-Guided Generate-and-Rerank Framework for Complex
+    and  Cross-domain  Text-to-SQL  Generation.  Presented  at  the  January  1  (2023).
+     https://doi.org/10.18653/v1/2023.findings-acl.23.
+17. Tao, M. et al.: Select, Answer and Explain: Interpretable Multi-hop Reading Comprehension
+    over Multiple Documents, (2019). https://doi.org/10.48550/arxiv.1911.00484.
+18. Fang, Y. et al.: Hierarchical Graph Network for Multi-hop Question Answering, (2019).
+     https://doi.org/10.48550/arxiv.1911.03631.
+19.  Antal, M., Buza, K.: Evaluating Open-Source LLMs in RAG Systems: A Benchmark on
+    Diploma Theses Abstracts Using Ragas. Acta Universitatis Sapientiae, Informatica. 17, 1,
+     (2025). https://doi.org/10.1007/s44427-025-00006-3.

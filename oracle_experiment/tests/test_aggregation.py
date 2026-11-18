@@ -1,6 +1,6 @@
 import pytest
 
-from aggregation import aggregate_answers, build_configuration_summary
+from adaptive_compute.aggregation import aggregate_answers, build_configuration_summary
 
 
 def test_majority_ignores_invalid_samples() -> None:

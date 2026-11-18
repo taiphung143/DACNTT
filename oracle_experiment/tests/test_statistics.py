@@ -1,6 +1,6 @@
 from math import isclose
 
-from analysis.statistics import (
+from adaptive_compute.analysis.statistics import (
     build_accuracy_intervals,
     build_paired_comparisons,
     exact_mcnemar_p,

@@ -1,10 +1,14 @@
 from math import isnan
 
-from analysis.aggregate import build_config_results, build_grid_summary, build_iso_budget_summary
-from analysis.behavior_analysis import classify_problem
-from analysis.oracle import build_oracle_comparison, select_min_cost_success
-from analysis.pareto import pareto_frontier
-from analysis.plots import _number
+from adaptive_compute.analysis.aggregate import (
+    build_config_results,
+    build_grid_summary,
+    build_iso_budget_summary,
+)
+from adaptive_compute.analysis.behavior_analysis import classify_problem
+from adaptive_compute.analysis.oracle import build_oracle_comparison, select_min_cost_success
+from adaptive_compute.analysis.pareto import pareto_frontier
+from adaptive_compute.analysis.plots import _number
 
 
 def _sample(problem: str, sample_id: int, *, length: int = 512, answer: str | None = "7", flagged: str | None = None) -> dict:

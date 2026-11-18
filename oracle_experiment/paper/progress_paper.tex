@@ -1,0 +1,826 @@
+% Progress manuscript for the undergraduate thesis project.
+% This file intentionally preserves samplepaper.tex as the original LNCS template.
+% Evidence-status convention used throughout:
+%   completed evidence  = produced by existing experiment artifacts;
+%   development result  = selected on Train/Validation, not held-out evidence;
+%   proposed method      = specified but not yet evaluated;
+%   future evaluation   = must not be described as a completed result.
+
+\documentclass[runningheads]{llncs}
+
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{url}
+
+\begin{document}
+
+\title{Adaptive Test-Time Compute for Small Reasoning Models:\\
+A Breadth--Depth Characterization and Preliminary Controller Study}
+\titlerunning{Adaptive Test-Time Compute for Small Reasoning Models}
+
+\author{Dinh-Hong Vu\inst{1}\orcidID{0000-0001-8513-3942} \and
+The-Tai Phung\inst{2} \and
+Thai-Son Bui\inst{2}}
+
+\authorrunning{Dinh-Hong Vu et al.}
+
+\institute{Natural Language Processing and Knowledge Discovery Research Group,
+Faculty of Information Technology, Ton Duc Thang University,
+Ho Chi Minh City, Vietnam\\
+\email{vudinhhong@tdtu.edu.vn}
+\and
+Faculty of Information Technology, Ton Duc Thang University,
+Ho Chi Minh City, Vietnam\\
+\email{\{52300059,52300058\}@student.tdtu.edu.vn}}
+
+\maketitle
+
+\begin{abstract}
+Test-time scaling can improve language-model reasoning by increasing the
+generation-token allowance of each response or by sampling multiple independent
+reasoning trajectories. However, applying a fixed inference configuration to
+all problems may waste computation, while adapting only one compute dimension
+may overlook useful breadth--depth trade-offs. This work investigates these
+trade-offs for a small open-weight reasoning model through a controlled oracle
+grid over sampling breadth $k\in\{1,2,4\}$ and generation-token caps
+$L\in\{512,1024,2048\}$. On 99 usable GSM8K problems with Qwen3-1.7B,
+increasing $L$ produces substantial accuracy gains, whereas the marginal
+benefit of additional samples decreases at larger budgets. Under the same
+nominal budget, one longer trajectory is more accurate and consumes fewer
+realized tokens than several heavily truncated short trajectories. A
+retrospective joint oracle reaches the best observed accuracy of 83.84\% with
+1,023.5 generated tokens per problem, compared with 4,246.7 tokens for the
+best fixed profile, demonstrating allocation headroom but not a deployable
+policy. As an initial Phase-2 development result, a leakage-controlled
+depth-only logistic baseline matches fixed-$L=2048$ validation accuracy while
+using 12.7\% fewer generated tokens. An 8192-token feasibility diagnostic with
+Qwen3-1.7B was stopped because of prohibitive latency on the available GPU, so
+subsequent development moved to a separately reported Qwen3-0.6B track. On the
+same frozen 30-problem MATH-500 development sample, Qwen3-0.6B accuracy rises
+from 10.0\% at $L=1024$ to 36.7\% at $L=2048$ and 50.0\% at $L=4096$, while
+truncation falls from 90.0\% to 43.3\%. The $1024\rightarrow2048$ gain is
+significant after Holm correction; the $2048\rightarrow4096$ comparison is
+inconclusive. These findings motivate a verifier-free sequential controller
+that allocates an initial token cap and introduces additional samples only when
+their predicted marginal utility justifies the cost. The MATH result is
+development evidence rather than held-out validation; joint-controller and
+final confirmatory evaluation remain future work.
+
+\keywords{Adaptive test-time compute \and Small reasoning models \and
+Breadth--depth allocation \and Adaptive inference \and Compute-efficient
+reasoning}
+\end{abstract}
+
+\section{Introduction}
+
+Reasoning-oriented language models can often improve final-answer accuracy by
+spending more computation at inference time. Two common ways of increasing
+test-time compute are to extend a single reasoning trajectory and to generate
+multiple independent trajectories before aggregating their answers. The first
+mechanism allocates more tokens to each attempt, while the second increases the
+number of attempts. Chain-of-thought prompting~\cite{wei2022cot},
+self-consistency~\cite{wang2023selfconsistency}, and repeated-sampling studies
+such as Brown et al.~\cite{brown2024monkeys} provide evidence that both forms
+of additional computation can improve reasoning performance.
+
+Most inference configurations nevertheless assign the same budget to every
+input. This is inefficient when problem difficulty and model behavior are
+heterogeneous: an easy problem may be solved with one short response, whereas
+a harder problem may require either a longer trajectory or several attempts.
+Recent methods therefore adapt sample counts~\cite{aggarwal2023adaptive,
+wang2025penny,wan2025rasc}, token budgets~\cite{han2025token}, or more general
+decoding computation~\cite{snell2025scaling,damani2025hard}. These results make
+adaptive compute a well-established research direction, but they also mean
+that a generic ``difficulty classifier chooses a budget'' is not, by itself,
+a defensible contribution.
+
+This study focuses on a narrower resource-constrained setting. We consider a
+small open-weight reasoning model, no external verifier or process reward
+model, a hard generation-token cap, and valid-only answer aggregation. We
+measure every generated token consumed by a policy, including exploratory
+rollouts that do not determine the final answer. Our operational variables are
+sampling breadth $k$, the number of independent trajectories, and token cap
+$L$, the \texttt{max\_new\_tokens} limit for each trajectory. We use the word
+``depth'' only as shorthand for this operational cap; it is not a claim about
+the semantic depth of reasoning.
+
+The initial experiment characterizes the full $3\times3$ grid
+$k\in\{1,2,4\}$ and $L\in\{512,1024,2048\}$ for Qwen3-1.7B on GSM8K.
+The characterization reveals a pronounced asymmetry. Increasing $L$ improves
+accuracy significantly at every $k$, while the benefit of increasing $k$ from
+2 to 4 becomes small or inconclusive at the larger token caps. Moreover,
+profiles with the same nominal product $kL$ have substantially different
+accuracy and realized-token cost. These observations motivate, but do not
+prove, the working hypothesis \emph{depth first, breadth selectively}.
+
+The main research question for the confirmatory study is:
+
+\begin{quote}
+For small open-weight reasoning models, can a verifier-free lightweight
+sequential policy that allocates generation-token caps and selectively adds
+independent samples improve the held-out accuracy--actual-generated-token
+Pareto frontier over fixed profiles and depth-only or breadth-only adaptive
+baselines?
+\end{quote}
+
+Two supporting questions ask when selective breadth provides utility beyond
+adaptive depth and how stable the observed decisions and gains are across
+reasoning datasets and a second small-model family. At the current project
+stage, the Qwen3-1.7B GSM8K characterization and development-only depth
+baseline remain completed historical evidence. A separate 30-problem
+Qwen3-0.6B MATH-500 depth pilot has also been completed. The joint controller,
+larger cross-dataset study, and final held-out evaluation are explicitly future
+work.
+
+The current contributions are:
+
+\begin{enumerate}
+  \item a controlled breadth--token-cap characterization of Qwen3-1.7B on
+  GSM8K with realized-token, latency, validity, and truncation accounting;
+  \item an iso-budget analysis showing that equal nominal budgets can produce
+  substantially different accuracy and realized cost;
+  \item retrospective fixed, depth-only, breadth-only, and joint oracle
+  frontiers that quantify opportunity without presenting the oracle as a
+  deployable policy;
+  \item a leakage-controlled controller-development pipeline and a preliminary
+  depth-only logistic baseline;
+  \item model-separated Qwen3-1.7B and Qwen3-0.6B MATH-500 development pilots
+  with a versioned exact-answer parser and depth-cap sensitivity analysis; and
+  \item a pre-specified sequential joint-controller design and a stronger
+  confirmatory evaluation protocol for subsequent work.
+\end{enumerate}
+
+\section{Related Work}
+
+\subsection{Test-Time Scaling and Self-Consistency}
+
+Chain-of-thought prompting elicits intermediate reasoning before a final
+answer~\cite{wei2022cot}. Self-consistency improves this approach by sampling
+multiple reasoning paths and selecting the most frequent answer
+~\cite{wang2023selfconsistency}. Repeated-sampling studies show that solution
+coverage can continue to grow with the number of attempts, although converting
+coverage into final-answer accuracy may require a reliable verifier or
+aggregator~\cite{brown2024monkeys}. These methods establish breadth as an
+important test-time compute axis, but a fixed sample count spends the same
+resources on easy and difficult inputs.
+
+\subsection{Adaptive Sampling}
+
+Adaptive-Consistency dynamically stops sampling as answer agreement
+stabilizes~\cite{aggarwal2023adaptive}. Difficulty-Adaptive Self-Consistency
+combines prior estimates of question difficulty with posterior sample
+evidence~\cite{wang2025penny}. Reasoning-Aware Self-Consistency also evaluates
+reasoning paths when deciding whether to stop and how to aggregate
+answers~\cite{wan2025rasc}. These works are direct precedents for adaptive
+breadth and must be treated as strong baselines rather than omitted from the
+novelty comparison.
+
+\subsection{Adaptive Token Budgets and Compute Allocation}
+
+Token-Budget-Aware LLM Reasoning assigns different reasoning budgets according
+to estimated problem complexity~\cite{han2025token}. Thought Calibration uses
+probes over hidden representations to determine when additional thinking is
+unlikely to help~\cite{wu2025thought}. Snell et al.~\cite{snell2025scaling} and
+Damani et al.~\cite{damani2025hard} study more general input-adaptive
+allocation of inference computation, often using learned reward signals,
+hidden states, or larger training collections. A closely related 2026 preprint
+formalizes average-budget allocation with a Lagrangian oracle and learns oracle
+actions from cheap input features, although its experiments vary sample count
+rather than jointly varying sample count and token cap~\cite{zhai2026adaptive}.
+
+\subsection{Position of This Study}
+
+The proposed setting is intentionally narrower than general test-time search
+or verifier-guided scaling. It asks whether an external, black-box,
+verifier-free policy can coordinate a hard token cap and selective resampling
+for a small open-weight model, while treating realized token use as the main
+cost rather than relying only on nominal budgets~\cite{wang2024tokeneconomies}.
+The scientific outcome is the held-out
+accuracy--realized-cost comparison against strong single-axis baselines, not
+profile-classification accuracy alone. We therefore avoid claiming the first
+adaptive compute allocator and instead evaluate a constrained joint allocation
+question that remains insufficiently characterized for small-model,
+low-overhead inference.
+
+\section{Problem Formulation}
+
+Let $x_i$ be a reasoning problem with ground-truth answer $y_i$. An inference
+profile is
+\begin{equation}
+  p=(k,L)\in\mathcal{P},
+\end{equation}
+where $k$ is the number of independent trajectories and $L$ is the maximum
+number of newly generated tokens per trajectory. The nominal upper bound is
+$B(p)=kL$, while the realized generated-token cost for problem $i$ is
+\begin{equation}
+  C_i(p)=\sum_{j=1}^{k} t_{ij}(L),
+\end{equation}
+where $t_{ij}(L)\leq L$ is the actual number of tokens produced by trajectory
+$j$. Nominal budget and realized cost are reported separately.
+
+Each trajectory is parsed using a strict final-answer extractor. Let
+$V_i(p)$ be the multiset of valid normalized answers among the $k$
+trajectories. If $V_i(p)$ is non-empty, the system returns its majority answer,
+with a deterministic lowest-sample-index rule for ties. Invalid answers do not
+vote. If no valid answer exists, the profile is incorrect. We denote final
+correctness by $A_i(p)\in\{0,1\}$.
+
+The retrospective cheapest-correct joint oracle is
+\begin{equation}
+  p_i^{*}=\arg\min_{p\in\mathcal{P}:A_i(p)=1}
+  \left(C_i(p),T_i(p),B(p),k,L\right),
+\end{equation}
+where $T_i(p)$ is latency and the tuple specifies the deterministic
+tie-breaking order. This oracle uses ground-truth outcomes after inference. It
+is an upper bound on allocation opportunity and cannot be deployed.
+
+For a deployable controller in state $s$, a cost-sensitive action objective can
+be written as
+\begin{equation}
+ U_{\lambda}(a\mid s)=
+ \Pr(\text{correct after }a\mid s)
+ -\lambda\,\mathbb{E}[\Delta C\mid s,a].
+\end{equation}
+The intended policy chooses an initial $L$, observes the first paid trajectory,
+and decides whether the expected marginal utility justifies additional
+samples. Ground truth, oracle profile labels, and ungenerated trajectories are
+forbidden test-time signals.
+
+\section{Methodology}
+
+\subsection{Oracle Grid Characterization}
+
+The completed characterization evaluates all nine profiles in
+$\{1,2,4\}\times\{512,1024,2048\}$. Samples are nested within a token cap:
+the $k=1$ profile uses sample 0, $k=2$ uses samples 0--1, and $k=4$ uses samples
+0--3. Consequently, each problem requires twelve unique generations rather
+than independently regenerating every profile. The sample seed is derived from
+the global seed, problem identifier, repetition identifier, and sample
+identifier; it is independent of both $k$ and $L$. This construction supports
+paired comparisons while preventing $k$ profiles from receiving unrelated
+sample pools.
+
+\subsection{Answer Parsing and Aggregation}
+
+The parser accepts explicit numeric final-answer formats, including GSM8K
+markers, boxed answers, and explicit ``Final answer'' fields. It does not fall
+back to the last number in free-form reasoning. A response may be categorized
+as truncated during thinking, truncated after thinking, completed but
+unparseable, or completed with a valid answer. Valid-only majority voting is
+used for $k>1$. Agreement at $k=1$ is not interpreted as consensus.
+
+One selected GSM8K item was marked for manual review. It remains in raw
+artifacts for provenance but is excluded from accuracy, Pareto, and oracle
+metrics. Original benchmark labels are never rewritten.
+
+\subsection{Cost and Oracle Analysis}
+
+Allocated budget, actual generated tokens, and latency are retained as distinct
+metrics. The primary frontier is constrained by actual generated tokens because
+models frequently stop before $L$, and different profiles with equal $kL$ can
+consume different realized compute. Fixed strategies use the same profile for
+every problem. Depth-only oracles hold $k$ fixed and choose $L$ retrospectively;
+breadth-only oracles hold $L$ fixed and choose $k$; the joint oracle may choose
+any profile. All restricted anchors are reported before selecting the best one.
+
+\subsection{Leakage-Controlled Depth Baseline}
+
+The implemented depth-only development baseline uses only features available
+before generation: question and prompt length, counts of numerical quantities,
+operator indicators, fraction and percentage indicators, and shallow lexical
+features. The feature schema explicitly allowlists columns prefixed with
+\texttt{feature\_}; correctness, observed outcomes, oracle profiles, and target
+labels are forbidden model inputs.
+
+The training target is the smallest $L$ whose observed $k=1$ response is
+correct. If no observed $k=1$ response is correct, the target falls back to
+$L=2048$ and retains an explicit unsolved-at-maximum-depth status. A
+standardized multinomial logistic regression is selected over
+$C\in\{0.1,1,10\}$, class weights in \{none, balanced\}, and ordered
+decision quantiles in $\{0.5,0.7,0.9\}$. Selection first maximizes validation
+policy accuracy, then minimizes actual generated tokens, followed by balanced
+classification metrics and deterministic simplicity tie-breakers.
+
+\subsection{Proposed Sequential Joint Controller}
+
+The joint controller has not yet been implemented or evaluated. Its proposed
+execution is:
+\begin{enumerate}
+  \item choose the initial token cap from input-only features;
+  \item generate and parse sample 1;
+  \item stop at $k=1$ or acquire sample 2 using input and already-observed
+  validity, truncation, output-length, and cap-utilization signals;
+  \item after two samples, stop at $k=2$ or acquire samples 3--4 using the
+  preceding signals plus answer agreement and valid-answer fraction; and
+  \item aggregate only the samples that the deployed policy paid to generate.
+\end{enumerate}
+
+The primary proposed learner is regularized logistic regression, with a shallow
+gradient-boosted tree as an ablation only if sufficient minority examples are
+available. A flat nine-class profile classifier is not the primary design
+because the observed cheapest-correct labels are highly imbalanced and some
+classes are empty.
+
+\section{Experimental Setup}
+
+\subsection{Model and Dataset}
+
+The completed evidence contains two model-specific tracks. The historical
+breadth--depth characterization uses Qwen3-1.7B~\cite{qwen3report}, revision
+\texttt{70d244cc86ccca08cf5af4e1e306ecf908b1ad5e}, and the GSM8K test
+split~\cite{cobbe2021gsm8k}. Thinking mode is enabled. Generation uses
+temperature 0.7, top-$p$ 0.95, CUDA, and bfloat16. The fixed dataset manifest
+contains 100 problems selected with global seed 42. After the manual-audit
+exclusion, 99 problems contribute to main metrics. This grid uses one
+stochastic repetition and contains 1,200 unique generation records.
+
+Current characterization and controller development use Qwen3-0.6B, revision
+\texttt{c1899de289a04d12100db370d81485cdf75e47ca}. The change is a versioned
+compute-feasibility amendment after a Qwen3-1.7B 8192-token diagnostic proved
+too slow on the available RTX 4060. It does not relabel or pool the 1.7B
+evidence. Model-dependent oracle actions, controller targets, and latency
+estimates must be regenerated for 0.6B.
+
+The completed 0.6B development pilot uses the same decoding settings on 30
+deterministically selected MATH-500 problems~\cite{hendrycks2021math}. The
+frozen sample is stratified across all seven subjects and five difficulty
+levels. It evaluates one trajectory per problem at
+$L\in\{1024,2048,4096\}$, yielding 90 unique generation records with no
+generation errors. The sample validates the smaller-model adapter,
+exact-answer parser, and depth-cap range; it is not an untouched MATH-500 test
+partition. All completed grids use one stochastic repetition, so current
+uncertainty estimates describe variation over problems but not full
+generation-seed variability.
+
+\subsection{Phase-2 Development Split}
+
+The existing Phase-2 manifest freezes 79 Train, 20 Validation, and 100 new
+held-out GSM8K problems. Train and Validation come from the 99 usable
+characterization problems; the Test problems are disjoint. The manifest stores
+problem identifiers, source indices, question hashes, and ground-truth hashes.
+Loading rejects cross-partition overlap or record changes. The 20-problem
+Validation partition is used for model selection and is not claimed to be an
+untouched final evaluation. The 100-problem held-out Test partition has not
+been loaded or evaluated.
+
+The existing controller labels and fitted depth baseline were produced with
+Qwen3-1.7B. The frozen problem identifiers may be reused for the 0.6B track,
+but outcomes, labels, thresholds, and fitted coefficients are not transferable
+and must be regenerated before any 0.6B controller evaluation.
+
+\subsection{Metrics}
+
+Primary outcomes are final-answer accuracy and actual generated tokens. We also
+report nominal $kL$, latency, truncation rate, valid-answer fraction, and
+tokens per correct answer where appropriate. Every trajectory acquired by a
+sequential policy must contribute to its cost, including exploratory or
+intermediate trajectories.
+
+\subsection{Statistical Analysis}
+
+Profile accuracy is reported with Wilson 95\% confidence intervals. Planned
+depth, breadth, and equal-budget accuracy comparisons use exact paired McNemar
+tests with Holm correction within each pre-specified comparison family.
+Problem-level paired bootstrap intervals summarize oracle-strategy differences.
+An inconclusive test is not interpreted as equivalence. Because only one
+generation repetition has been completed, problem-sampling uncertainty is
+reported separately from the still-unmeasured generation-seed uncertainty.
+
+\subsection{Baselines and Evidence Status}
+
+The final policy evaluation is intended to include fixed profiles, a learned
+depth-only controller, an agreement-stopping breadth-only controller, a simple
+depth-first heuristic, the learned joint controller, and retrospective fixed,
+depth-only, breadth-only, and joint oracles. The depth-only controller at
+comparable realized cost is the primary baseline; the joint controller must not
+be evaluated only against the most expensive fixed profile.
+
+Table~\ref{tab:status} separates completed evidence from planned work.
+
+\begin{table}
+\caption{Evidence status at the current project stage.}
+\label{tab:status}
+\centering
+\begin{tabular}{p{5.0cm}|p{6.0cm}}
+\hline
+Component & Status \\
+\hline
+Qwen3-1.7B/GSM8K $3\times3$ grid & Completed historical evidence \\
+Cost, failure, statistical, and oracle analyses & Completed evidence \\
+79/20/100 Phase-2 manifest & Completed engineering artifact \\
+Qwen3-1.7B depth-only logistic controller & Historical Train/Validation result \\
+Qwen3-1.7B MATH-500 depth pilot & Completed historical evidence \\
+Qwen3-0.6B MATH-500 depth pilot & Completed current development evidence \\
+Qwen3-0.6B GSM8K labels and depth controller & Not yet regenerated \\
+Sequential joint controller & Proposed method; not yet implemented \\
+100-problem GSM8K held-out test & Frozen; not evaluated \\
+Larger MATH and secondary-model study & Future confirmatory evaluation \\
+\hline
+\end{tabular}
+\end{table}
+
+\section{Preliminary Results}
+
+\subsection{Breadth--Depth Accuracy Grid}
+
+Table~\ref{tab:grid} presents final-answer accuracy for all nine profiles. At
+every breadth, accuracy rises sharply as $L$ increases. All six planned adjacent
+depth comparisons are significant after Holm correction. Four of six adjacent
+breadth comparisons are significant; the $k=2$ to $k=4$ comparisons at
+$L=1024$ and $L=2048$ are inconclusive, with the latter adding only 2.02
+percentage points.
+
+\begin{table}
+\caption{Final-answer accuracy on 99 evaluated GSM8K problems.}
+\label{tab:grid}
+\centering
+\begin{tabular}{c|ccc}
+\hline
+$k$ & $L=512$ & $L=1024$ & $L=2048$ \\
+\hline
+1 & 9.09\% & 53.54\% & 70.71\% \\
+2 & 17.17\% & 65.66\% & 81.82\% \\
+4 & 28.28\% & 71.72\% & 83.84\% \\
+\hline
+\end{tabular}
+\end{table}
+
+At $L=512$, sample-level truncation is approximately 85--88\%, explaining why
+additional short samples frequently replicate incomplete behavior rather than
+providing useful independent solutions. Increasing $k$ from 1 to 2 is useful
+at all three caps, but the marginal return from 2 to 4 decreases as $L$ grows.
+
+\subsection{Equal Nominal Budget Does Not Imply Equal Behavior}
+
+Table~\ref{tab:isobudget} compares three profiles with the same nominal budget
+$kL=2048$. Contrary to treating tokens and samples as interchangeable, the
+single long trajectory is both more accurate and less expensive in realized
+tokens. The accuracy differences between $4\times512$ and each longer-depth
+profile are significant after Holm correction; the difference between
+$2\times1024$ and $1\times2048$ is inconclusive.
+
+\begin{table}
+\caption{Profiles with the same nominal budget $kL=2048$.}
+\label{tab:isobudget}
+\centering
+\begin{tabular}{c|r|r|r}
+\hline
+Profile & Accuracy & Avg. actual tokens & Sample truncation \\
+\hline
+$4\times512$ & 28.28\% & 1,988.9 & 85.4\% \\
+$2\times1024$ & 65.66\% & 1,616.0 & 35.9\% \\
+$1\times2048$ & 70.71\% & 1,079.1 & 18.2\% \\
+\hline
+\end{tabular}
+\end{table}
+
+This is an empirical observation for the tested setting. It does not establish
+that depth is universally superior to breadth.
+
+\subsection{Per-Problem Oracle Preferences}
+
+The joint cheapest-correct oracle solves 83 of 99 evaluated problems. Among
+these 83, 70 select a $k=1$ profile and 13 require $k>1$ under the observed
+sample pool. Fifty-five select $L=2048$, while no solved problem selects a
+profile with $L=512$ as cheapest-correct. Table~\ref{tab:preferences} gives the
+full distribution.
+
+\begin{table}
+\caption{Cheapest-correct joint-oracle profile distribution.}
+\label{tab:preferences}
+\centering
+\begin{tabular}{c|r@{\qquad}c|r}
+\hline
+Profile & Count & Profile & Count \\
+\hline
+$1\times512$  & 0  & $2\times512$  & 0 \\
+$1\times1024$ & 25 & $2\times1024$ & 2 \\
+$1\times2048$ & 45 & $2\times2048$ & 9 \\
+$4\times512$  & 0  & $4\times1024$ & 1 \\
+$4\times2048$ & 1  & Unsolved       & 16 \\
+\hline
+\end{tabular}
+\end{table}
+
+The imbalance makes direct nine-class profile prediction a poor primary
+learning formulation. It also motivates an explicit minimum number of positive
+escalation examples before learning separate breadth decisions.
+
+\subsection{Retrospective Oracle Headroom}
+
+Table~\ref{tab:oracle} compares fixed and retrospective adaptive strategy
+anchors. The best fixed profile, $4\times2048$, solves 83 problems at an
+average cost of 4,246.7 generated tokens. The joint oracle reaches the same
+accuracy at 1,023.5 tokens. At approximately this realized cost, the exact
+budget-constrained frontier solves 83 problems for joint allocation, compared
+with 70 for depth-only, 69 for breadth-only, and 53 for fixed allocation. Thus,
+the joint oracle has 13.13 percentage points of compute-matched headroom over
+the depth-only oracle. This is hindsight opportunity, not evidence that a
+controller can identify the oracle action.
+
+\begin{table}
+\caption{Illustrative fixed and retrospective oracle anchors.}
+\label{tab:oracle}
+\centering
+\begin{tabular}{l|l|r|r|r}
+\hline
+Strategy & Anchor & Solved & Accuracy & Avg. actual tokens \\
+\hline
+Fixed & $4\times2048$ & 83 & 83.84\% & 4,246.7 \\
+Breadth-only oracle & $L=2048$ & 83 & 83.84\% & 1,270.6 \\
+Depth-only oracle & $k=1$ & 70 & 70.71\% & 750.5 \\
+Depth-only oracle & $k=4$ & 83 & 83.84\% & 3,118.1 \\
+Joint oracle & all profiles & 83 & 83.84\% & 1,023.5 \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Preliminary Depth-Only Controller}
+
+The selected depth-only candidate uses $C=1$, balanced class weights, and the
+0.9 ordered target-depth quantile. Table~\ref{tab:depthcontroller} reports its
+20-problem Validation result. The controller matches the fixed-$L=2048$
+accuracy of 13/20 while reducing average actual generated tokens from 1,213.05
+to 1,059.45, a 12.7\% reduction. Exact depth-target classification accuracy is
+50\%.
+
+\begin{table}
+\caption{Depth-only development result on 20 Validation problems.}
+\label{tab:depthcontroller}
+\centering
+\begin{tabular}{l|r|r|r}
+\hline
+Policy & Correct & Accuracy & Avg. actual tokens \\
+\hline
+Fixed $L=512$  & 2/20  & 10.0\% & 499.00 \\
+Fixed $L=1024$ & 9/20  & 45.0\% & 843.65 \\
+Fixed $L=2048$ & 13/20 & 65.0\% & 1,213.05 \\
+Selected depth logistic & 13/20 & 65.0\% & 1,059.45 \\
+\hline
+\end{tabular}
+\end{table}
+
+This result is optimistic because the candidate and its thresholds were selected
+on the same Validation set. It is neither held-out evidence nor confirmation of
+the thesis claim. The frozen Test partition remains unused.
+
+\subsection{MATH-500 Depth-Cap Development Pilots}
+
+Table~\ref{tab:mathpilot} reports the completed Qwen3-0.6B pilot on the frozen
+30-problem MATH-500 development sample. Increasing the cap produces a monotonic
+accuracy gain and a corresponding reduction in truncation. The paired
+$1024\rightarrow2048$ comparison contains eight improvements and no
+regressions, for a 26.7-point accuracy increase (exact McNemar
+$p=0.0078125$, Holm-adjusted $p=0.015625$ within the planned depth family).
+The $2048\rightarrow4096$ comparison adds four correct answers and no
+regressions, but is inconclusive after correction ($p=0.125$). This result does
+not establish equivalence. Thirteen of 30 trajectories still hit the
+4096-token cap, so the upper end of the 0.6B MATH action space remains
+truncation-limited.
+
+\begin{table}
+\caption{Qwen3-0.6B MATH-500 depth pilot on 30 development problems.}
+\label{tab:mathpilot}
+\centering
+\begin{tabular}{r|r|r|r|r}
+\hline
+$L$ & Correct & Accuracy & Avg. actual tokens & Truncation \\
+\hline
+1024 & 3/30  & 10.0\% & 984.9   & 90.0\% \\
+2048 & 11/30 & 36.7\% & 1,764.4 & 60.0\% \\
+4096 & 15/30 & 50.0\% & 2,804.0 & 43.3\% \\
+\hline
+\end{tabular}
+\end{table}
+
+The earlier Qwen3-1.7B stratum on the same frozen problems achieved 6.7\%,
+26.7\%, and 53.3\% accuracy, with 93.3\%, 73.3\%, and 46.7\% truncation at the
+three caps. These model tracks are descriptive and separate: 0.6B performs
+better at the two lower caps but is 3.3 points lower at 4096, and one
+stochastic repetition cannot support a model-superiority claim.
+
+Manual auditing of the historical run exposed two deterministic
+reference-normalization defects: a numeric base suffix and a comma-separated
+numeric list. Parser v2 corrected these cases and reprocessed the same 90 raw
+responses without new inference. The 0.6B pilot used parser v2 from the start.
+This versioning prevents parser behavior from being confounded with model
+behavior.
+
+\section{Discussion}
+
+\subsection{How the Evidence Supports the Design Hypothesis}
+
+The observed grid supports allocating enough room for a usable trajectory before
+spending heavily on additional samples. However, breadth should not be removed:
+13 of the 83 oracle-solved problems require $k>1$, and the budget-constrained
+joint oracle retains substantial headroom over depth-only allocation. The
+academically safe interpretation is therefore that \emph{depth first, breadth
+selectively} is an empirical observation and a hypothesis for confirmatory
+testing, not a universal design principle.
+
+The two MATH-500 model strata strengthen the narrower claim that an
+insufficient token cap can dominate observed performance within the Qwen3
+family. They do not establish cross-family or cross-dataset controller
+generalization because the sample is development-only and evaluates depth
+rather than adaptive breadth.
+
+\subsection{Oracle Opportunity Versus Learnability}
+
+The oracle observes correctness after all profiles have been evaluated. A
+controller observes only cheap input features and signals from already-paid
+trajectories. The central research risk is that the 13 breadth-dependent cases
+may be too rare or too stochastic to predict. Consequently, controller success
+must be defined by the held-out policy frontier rather than by the size of the
+oracle gap or by profile-label accuracy.
+
+\subsection{System Contribution}
+
+The accompanying software separates dataset and model adapters, strict answer
+parsing, inference execution, nested sample reuse, append-only generation
+caching, checkpoint/resume, provenance manifests, cost accounting, controller
+data construction, and statistical reporting. The ordinary non-GPU test suite
+currently contains 134 passing tests. This reproducible pipeline is part of the
+CS/IT contribution, but infrastructure such as LangGraph, RAG, multi-agent
+execution, or a deployment platform is not required by the research question.
+
+\section{Limitations}
+
+The completed evidence has several important limitations:
+\begin{itemize}
+  \item it uses two sizes from one model family and one generation repetition;
+  the MATH-500 evidence is a 30-problem development pilot rather than a held-out
+  benchmark result;
+  \item only 99 problems contribute to main characterization metrics;
+  \item $L$ is an operational token cap and must not be interpreted as true
+  reasoning depth;
+  \item the retrospective oracle uses ground-truth outcomes and is not
+  deployable;
+  \item the depth-controller result is selected on only 20 Validation problems;
+  \item oracle labels are model-, prompt-, parser-, and seed-dependent;
+  \item the completed Qwen3-1.7B controller labels and coefficients cannot be
+  transferred to Qwen3-0.6B;
+  \item latency is conditional on the recorded hardware and execution setup;
+  \item the joint controller and final held-out evaluation have not been run;
+  and
+  \item no controller-level cross-dataset or cross-model generalization claim
+  is yet supported.
+\end{itemize}
+
+\section{Planned Confirmatory Evaluation}
+
+The revised protocol expands the completed MATH-500 pilot without turning the
+thesis into a large benchmark study. The minimum dataset suite is GSM8K plus
+MATH~\cite{hendrycks2021math}. The completed Qwen3-1.7B experiments remain
+model-specific historical evidence. After the 8192-token diagnostic showed
+prohibitive latency on the available RTX 4060, characterization and controller
+development moved to Qwen3-0.6B, pinned at revision
+\texttt{c1899de289a04d12100db370d81485cdf75e47ca}. The 30-problem 0.6B
+MATH-500 pilot is now complete. This is a versioned compute-feasibility
+amendment, not a relabelling of the 1.7B results. Metrics from the two models
+are reported separately, and a universal cross-model controller remains
+outside scope.
+
+The target development scale is at least 300 oracle-characterized problems,
+with at least 100 from the second dataset and at least 30 positive examples for
+each learned escalation decision. The existing Qwen3-1.7B labels cannot count
+as 0.6B controller targets; GSM8K and MATH outcomes required by the selected
+0.6B action space must be regenerated before fitting the controller.
+
+For Qwen3-0.6B on MATH-500, 90.0\%, 60.0\%, and 43.3\% of trajectories
+truncate at $L=1024$, 2048, and 4096. The current development action space
+therefore retains $L\in\{1024,2048,4096\}$: 4096 provides directional accuracy
+headroom, although its comparison with 2048 is inconclusive at this sample
+size. A bounded Qwen3-1.7B $L=8192$ extension on the same sample was stopped
+after two trajectories required 11.63 and 27.10 minutes and still truncated
+before final answers. That partial run is retained only as feasibility evidence
+and excluded from accuracy estimates. The 0.6B protocol does not include 8192.
+
+The final baseline set will include all relevant fixed profiles, a
+compute-matched input heuristic, learned depth-only allocation,
+Adaptive-Consistency-style breadth stopping, a simple depth-first heuristic,
+the learned joint policy, and restricted/joint oracle upper bounds. Before
+opening final Test outcomes, the project will freeze the dataset manifests,
+feature contract, controller, utility trade-off, and decision thresholds.
+
+The joint method will proceed as the primary method on Validation if it either
+improves accuracy over depth-only by at least three percentage points at
+realized-token cost within $\pm10\%$, or reduces actual generated tokens by at
+least 10\% with no more than a two-point accuracy decrease. If joint allocation
+is Pareto-dominated by depth-only, or breadth is too rare to provide positive
+net utility, the thesis will pivot to adaptive depth and report the failure to
+convert joint-oracle headroom into a learnable policy. If minority events are
+insufficient, the response will be to collect more oracle data or simplify the
+decision rather than increase controller complexity.
+
+\section{Conclusion}
+
+The completed characterization shows that the placement of test-time compute
+matters: equal nominal budgets do not produce equal accuracy or realized cost,
+and short, highly truncated trajectories can make additional breadth
+inefficient. Most oracle-solved problems favor $k=1$, yet a minority requires
+additional samples and creates joint-allocation headroom. A preliminary
+depth-only controller provides encouraging development evidence by matching
+the strongest fixed-depth Validation accuracy with 12.7\% fewer generated
+tokens. The current Qwen3-0.6B MATH-500 development pilot independently shows
+that increasing the token cap from 1024 to 4096 raises accuracy from 10.0\% to
+50.0\% while reducing truncation from 90.0\% to 43.3\%. The significant gain
+from 1024 to 2048 and the inconclusive 2048-to-4096 comparison support retaining
+all three caps for further characterization without claiming that 4096 is
+decisively superior. These findings justify a sequential, selective-breadth
+hypothesis, but they do not yet establish a deployable joint policy or
+controller generalization across datasets. The next scientific step is to
+regenerate 0.6B controller labels, implement the staged decisions, and evaluate
+the frozen policy on unseen problems.
+
+\begin{credits}
+\subsubsection{Acknowledgements}
+The authors thank the Faculty of Information Technology at Ton Duc Thang
+University for supervision and research support.
+
+\subsubsection{Disclosure of Interests}
+The authors have no competing interests to declare that are relevant to the
+content of this article.
+\end{credits}
+
+\begin{thebibliography}{15}
+
+\bibitem{wei2022cot}
+Wei, J., Wang, X., Schuurmans, D., Bosma, M., Xia, F., Chi, E.H., Le, Q.V.,
+Zhou, D.: Chain-of-thought prompting elicits reasoning in large language
+models. In: Advances in Neural Information Processing Systems 35 (2022)
+
+\bibitem{wang2023selfconsistency}
+Wang, X., Wei, J., Schuurmans, D., Le, Q.V., Chi, E.H., Narang, S.,
+Chowdhery, A., Zhou, D.: Self-consistency improves chain of thought reasoning
+in language models. In: International Conference on Learning Representations
+(2023)
+
+\bibitem{brown2024monkeys}
+Brown, B., Juravsky, J., Ehrlich, R., Clark, R., Le, Q.V., R\'{e}, C.,
+Mirhoseini, A.: Large language monkeys: Scaling inference compute with repeated
+sampling. arXiv preprint arXiv:2407.21787 (2024)
+
+\bibitem{aggarwal2023adaptive}
+Aggarwal, P., Madaan, A., Yang, Y., Mausam: Let's sample step by step:
+Adaptive-consistency for efficient reasoning and coding with LLMs. In:
+Proceedings of EMNLP, pp. 12375--12396 (2023)
+
+\bibitem{wang2024tokeneconomies}
+Wang, J., Jain, S., Zhang, D., Ray, B., Kumar, V., Athiwaratkun, B.:
+Reasoning in token economies: Budget-aware evaluation of LLM reasoning
+strategies. In: Proceedings of EMNLP, pp. 19916--19939 (2024)
+
+\bibitem{snell2025scaling}
+Snell, C., Lee, J., Xu, K., Kumar, A.: Scaling LLM test-time compute optimally
+can be more effective than scaling model parameters. In: International
+Conference on Learning Representations (2025)
+
+\bibitem{damani2025hard}
+Damani, M., Shenfeld, I., Peng, A., Bobu, A., Andreas, J.: Learning how hard to
+think: Input-adaptive allocation of LM computation. In: International
+Conference on Learning Representations (2025)
+
+\bibitem{han2025token}
+Han, T., Wang, Z., Fang, C., Zhao, S., Ma, S., Chen, Z.: Token-budget-aware
+LLM reasoning. In: Findings of the Association for Computational Linguistics:
+ACL, pp. 24842--24855 (2025)
+
+\bibitem{wang2025penny}
+Wang, X., Feng, S., Li, Y., Yuan, P., Zhang, Y., Tan, C., Pan, B., Hu, Y.,
+Li, K.: Make every penny count: Difficulty-adaptive self-consistency for
+cost-efficient reasoning. In: Findings of NAACL (2025)
+
+\bibitem{wan2025rasc}
+Wan, G., Wu, Y., Chen, J., Li, S.: Reasoning aware self-consistency:
+Leveraging reasoning paths for efficient LLM sampling. In: Proceedings of
+NAACL, pp. 3613--3635 (2025)
+
+\bibitem{wu2025thought}
+Wu, M., Zhou, C., Bates, S., Jaakkola, T.: Thought calibration: Efficient and
+confident test-time scaling. In: Proceedings of EMNLP, pp. 14291--14305
+(2025)
+
+\bibitem{zhai2026adaptive}
+Zhai, Z., Li, B., Xiao, B., Li, M., Wang, X.: Adaptive test-time compute
+allocation for reasoning LLMs via constrained policy optimization. arXiv
+preprint arXiv:2604.14853 (2026)
+
+\bibitem{qwen3report}
+Qwen Team: Qwen3 technical report. arXiv preprint arXiv:2505.09388 (2025)
+
+\bibitem{cobbe2021gsm8k}
+Cobbe, K., Kosaraju, V., Bavarian, M., Chen, M., Jun, H., Kaiser, L.,
+Plappert, M., Tworek, J., Hilton, J., Nakano, R., Hesse, C., Schulman, J.:
+Training verifiers to solve math word problems. arXiv preprint
+arXiv:2110.14168 (2021)
+
+\bibitem{hendrycks2021math}
+Hendrycks, D., Burns, C., Kadavath, S., Arora, A., Basart, S., Tang, E.,
+Song, D., Steinhardt, J.: Measuring mathematical problem solving with the
+MATH dataset. In: NeurIPS Datasets and Benchmarks Track (2021)
+
+\end{thebibliography}
+
+\end{document}

@@ -1,0 +1,134 @@
+\chapter{Cơ sở lý thuyết và công trình liên quan}
+\label{chap:related-work}
+
+\section{Suy luận tại thời điểm kiểm thử}
+
+Trong khóa luận này, \emph{test-time compute} là lượng tính toán được sử dụng sau khi
+mô hình đã được huấn luyện, trong quá trình sinh lời giải cho một đầu vào cụ thể. Cách
+tiếp cận này không thay đổi trọng số của mô hình nền. Thay vào đó, hệ thống điều chỉnh
+số token tối đa cho một quỹ đạo sinh, số quỹ đạo được lấy mẫu, hoặc thời điểm dừng lấy
+mẫu. Chain-of-thought cho phép mô hình biểu diễn các bước trung gian trước đáp án
+cuối~\cite{wei2022cot}; đây là tiền đề để tăng compute suy luận có thể làm thay đổi xác
+suất giải đúng một bài toán.
+
+Khóa luận phân biệt hai trục điều khiển. \emph{Breadth} là số quỹ đạo độc lập $k$.
+\emph{Depth} là cách gọi tắt cho giới hạn sinh $L=\code{max\_new\_tokens}$ của mỗi
+quỹ đạo. Depth trong tài liệu này không hàm ý rằng lời giải dài hơn luôn có cấu trúc
+suy luận sâu hơn. Hai trục có tác động khác nhau: tăng $L$ tạo cơ hội để một quỹ đạo
+hoàn tất, còn tăng $k$ tạo thêm các lần thử và cho phép tổng hợp đáp án. Vì chi phí
+thực tế của một quỹ đạo có thể thấp hơn giới hạn, đánh giá phải dùng số token thật sự
+đã sinh thay vì chỉ dùng tích danh nghĩa $kL$.
+
+\section{Lấy nhiều mẫu và self-consistency}
+
+Self-consistency lấy nhiều quỹ đạo chain-of-thought rồi chọn đáp án xuất hiện thường
+xuyên nhất~\cite{wang2023selfconsistency}. Repeated sampling mở rộng trực giác này:
+khi các lần sinh có tính ngẫu nhiên, nhiều mẫu làm tăng xác suất ít nhất một mẫu tìm
+được lời giải đúng~\cite{brown2024monkeys}. Tuy nhiên, tăng số mẫu đồng đều cho mọi
+bài làm chi phí tăng tuyến tính và không tận dụng việc một số bài đã có thể dừng sớm.
+Ngoài ra, nếu mọi mẫu đều bị cắt trước đáp án cuối vì $L$ quá thấp thì tăng breadth
+không giải quyết được nút thắt token cap.
+
+Khóa luận sử dụng biểu quyết chỉ trên các đáp án cuối parse được. Mẫu không hợp lệ
+không được bỏ phiếu và trường hợp không có đáp án hợp lệ được tính là sai. Quy tắc này
+khắt khe hơn việc trích số cuối cùng xuất hiện trong toàn bộ reasoning, nhưng tránh biến
+một con số trung gian thành dự đoán. Khi hai đáp án có cùng số phiếu, đáp án thuộc mẫu
+có chỉ số thấp hơn được chọn để bảo đảm tính tất định.
+
+\section{Thích ứng theo breadth và dừng sớm}
+
+Một hướng nghiên cứu giảm chi phí self-consistency là quyết định số mẫu theo tín hiệu
+đã quan sát. Adaptive-Consistency ước lượng mức ổn định của phân phối đáp án để dừng
+lấy mẫu~\cite{aggarwal2023adaptive}. Difficulty-Adaptive Self-Consistency điều chỉnh
+chi phí theo độ khó dự đoán của đầu vào~\cite{wang2025penny}, còn Reasoning-Aware
+Self-Consistency sử dụng thông tin từ các đường suy luận để lấy mẫu hiệu quả
+hơn~\cite{wan2025rasc}. ESC nghiên cứu dừng self-consistency sớm~\cite{li2024esc}, và
+Certaindex xây dựng chỉ số độ chắc chắn để mở rộng suy luận hiệu quả
+hơn~\cite{fu2025certaindex}.
+
+Các phương pháp trên cho thấy không nhất thiết phải trả chi phí của một $k$ cố định
+cho mọi bài. Tuy nhiên, một số phương pháp cần ước lượng độ chắc chắn, đặc trưng phức
+tạp hoặc nhiều mẫu hơn phạm vi phần cứng của đề tài. Baseline breadth-only của khóa
+luận vì vậy dùng một quy tắc tối giản và có thể kiểm toán: luôn lấy hai mẫu tại một $L$
+cố định; dừng nếu cả hai đáp án hợp lệ và giống nhau; nếu không thì lấy đủ bốn mẫu.
+Quy tắc này dùng đồng thuận đáp án chuẩn hóa chứ không giả định đồng thuận đồng nghĩa
+với đúng. Nó là một chính sách chi phí, không phải một bộ ước lượng xác suất đúng.
+
+\section{Thích ứng theo ngân sách token}
+
+Nhánh thứ hai điều khiển độ dài suy luận. Token-Budget-Aware reasoning nghiên cứu việc
+đưa ràng buộc ngân sách vào quá trình suy luận~\cite{han2025token}. Thought Calibration
+điều chỉnh compute kiểm thử dựa trên độ tin cậy~\cite{wu2025thought}. Các công trình
+về compute-optimal inference cho thấy điểm vận hành tối ưu phụ thuộc vào bài toán,
+mô hình và loại tài nguyên được cấp~\cite{snell2025scaling,wu2024inference}. Learning
+How Hard to Think xem phân bổ compute theo đầu vào như một bài toán thích ứng
+riêng~\cite{damani2025hard}.
+
+Một số hướng can thiệp trực tiếp vào quá trình sinh. s1 đề xuất budget forcing để kéo
+dài hoặc ép quá trình suy luận theo ngân sách~\cite{muennighoff2025s1}; L1 học cách
+điều khiển độ dài suy luận bằng reinforcement learning~\cite{aggarwal2025l1}. Ngược
+lại, ``When More is Less'' cảnh báo rằng chain-of-thought dài hơn không mặc nhiên tạo
+ra kết quả tốt hơn~\cite{wu2025moreless}. Các kết quả này là cơ sở để khóa luận không
+đồng nhất token nhiều với reasoning tốt và luôn báo cáo cả accuracy lẫn token thực tế.
+
+Phạm vi thực nghiệm chính sử dụng decoder Qwen3 không chỉnh sửa với thinking mode
+được bật. Budget forcing, native thinking budget và non-thinking mode là các đối chứng
+quan trọng cho nghiên cứu tiếp theo, nhưng không được trình bày như bằng chứng đã hoàn
+tất. Quyết định này giữ khối lượng trong phạm vi hai tuần còn lại và bảo đảm so sánh
+chính sử dụng cùng một cơ chế sinh.
+
+\section{Phân bổ kết hợp và chính sách học được}
+
+Phân bổ joint phải trả lời hai câu hỏi: chọn token cap nào và có nên lấy thêm mẫu hay
+không. Các phương pháp dựa trên độ khó hoặc tối ưu chính sách có thể học quyết định
+compute từ dữ liệu~\cite{wang2025penny,zhai2026adaptive}. PaCoRe mở rộng theo hướng
+phối hợp reasoning song song và tuần tự~\cite{hu2026pacore}. Những hướng này giàu khả
+năng hơn một heuristic, nhưng đòi hỏi dữ liệu huấn luyện controller đủ lớn, định nghĩa
+reward rõ ràng và một quy trình chống rò rỉ nghiêm ngặt.
+
+Trong dữ liệu Train của đề tài, số sự kiện escalation dương tại từng stage không đạt
+ngưỡng tối thiểu đã đăng ký là 30. Vì vậy, một joint controller học máy đáng tin cậy
+chưa được xem là đóng góp đã hoàn tất. Chính sách joint được đánh giá trong khóa luận
+là heuristic tất định: prompt-token tertile từ Train chọn $L$; sau đó policy dừng ở
+$k=1$ chỉ khi đáp án cuối hợp lệ và mẫu không bị cắt, dừng ở $k=2$ khi hai đáp án hợp
+lệ giống nhau, nếu không lấy đủ $k=4$. Việc gọi đúng tên heuristic là cần thiết để
+không phóng đại mức độ mới của phương pháp.
+
+\section{Hiệu quả suy luận cho mô hình nhỏ}
+
+Reasoning in Token Economies nhấn mạnh rằng đánh giá chiến lược suy luận phải gắn với
+ngân sách thay vì chỉ so sánh độ chính xác~\cite{wang2024tokeneconomies}. Qwen3 cung
+cấp thinking mode và nhiều kích thước mô hình, tạo điều kiện nghiên cứu test-time
+scaling trên mô hình mở~\cite{qwen3report}. Khóa luận chọn Qwen3-0.6B vì có thể chạy
+lặp lại trên một RTX 4060. Phân tích Qwen3-1.7B trước đó được giữ như bằng chứng lịch
+sử nhưng không gộp với kết quả chính, do khác kích thước mô hình và action space.
+
+Việc dùng mô hình nhỏ làm cho bài toán phân bổ compute trở nên thực tế: một cấu hình
+quá lớn có thể tăng thời gian chạy đáng kể mà không cải thiện accuracy tương ứng.
+Đồng thời, kết luận không được khái quát sang mọi họ mô hình. Trong phạm vi khóa luận,
+``hiệu quả'' được hiểu là vị trí trên quan hệ accuracy--actual-generated-token của
+cùng mô hình, cùng dữ liệu và cùng quy trình sinh.
+
+\section{Khoảng trống nghiên cứu và vị trí của đề tài}
+
+Các công trình trước đã nghiên cứu self-consistency, dừng sớm, token budget và phân bổ
+compute học được. Khoảng trống mà đề tài xử lý ở quy mô khóa luận đại học không phải
+là đề xuất một họ thuật toán hoàn toàn mới, mà là đánh giá kiểm soát một câu hỏi hẹp:
+trên mô hình mở 0.6B chạy cục bộ, một chính sách tuần tự không verifier kết hợp token
+cap và selective sampling có cải thiện biên Pareto so với các đối chứng cố định,
+depth-only và breadth-only hay không.
+
+Vị trí thực nghiệm của đề tài được xác định bởi năm ràng buộc. Thứ nhất, hệ thống không
+dùng verifier ngoài hoặc hidden state. Thứ hai, đáp án cuối được parse nghiêm ngặt và
+mẫu không hợp lệ không được bỏ phiếu. Thứ ba, chi phí là token thật sự sinh và mọi mẫu
+đã yêu cầu đều bị tính phí. Thứ tư, policy được chọn trên Train/Validation rồi đóng
+băng trước khi mở Test. Thứ năm, oracle chỉ là cận trên cơ hội từ sample pool đã sinh,
+không phải policy triển khai được. Các ràng buộc này tạo một phép so sánh nhỏ nhưng
+có thể tái lập, đồng thời làm rõ giới hạn của mọi kết luận rút ra.
+
+GSM8K~\cite{cobbe2021gsm8k} và MATH-500, được lấy từ bộ MATH
+\cite{hendrycks2021math}, cung cấp hai mức độ và kiểu đáp án khác nhau. Việc một policy
+hoạt động trên GSM8K nhưng không ổn định trên MATH-500 được xem là bằng chứng về tính
+phụ thuộc miền, thay vì được che khuất bằng cách gộp hai tập dữ liệu. Chương tiếp theo
+chuyển các nguyên tắc trên thành định nghĩa chính sách, cost accounting và protocol
+thống kê cụ thể.

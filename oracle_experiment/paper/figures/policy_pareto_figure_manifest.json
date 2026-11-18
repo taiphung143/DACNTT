@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "artifact_type": "frozen_test_policy_pareto_figures",
+  "source_hashes": {
+    "results\\phase2\\qwen3_0_6b_gsm8k_test_n100_policy_replay_v3\\policy_summary.csv": "9ae6954d209c05571132a46bf5396c600e5e50c2fd5d1213f4095d15f8442c92",
+    "results\\phase2\\qwen3_0_6b_gsm8k_test_n100_policy_replay_v3\\policy_pareto.csv": "701f966a912c91e7622de1375762544466e5181651ebc09eda346152911d5303",
+    "results\\phase2\\qwen3_0_6b_math500_test_n100_baseline_replay_v1\\policy_summary.csv": "20e7f1ab5638123235e804b03737bf1e0b4f2d86fe1b4febe2d4616d8339e901",
+    "results\\phase2\\qwen3_0_6b_math500_test_n100_baseline_replay_v1\\policy_pareto.csv": "ecf280c816f9ceaa983633c6e50789b53d836522d33d6e5bb2edbc735655d6c0"
+  },
+  "selected_policy_ids": {
+    "gsm8k": "breadth_only_agreement_L1024_v1",
+    "math500": "fixed_k2_L4096"
+  },
+  "policy_counts": {
+    "gsm8k": 14,
+    "math500": 14
+  },
+  "outputs": {
+    "gsm8k_test_policy_pareto.png": "feb7e0cbac63e4fbd1264fde555bdabe3fd54061dd4badb3daa639a8a06643a3",
+    "gsm8k_test_policy_pareto.pdf": "0c163790aeac603412c5f9e9a07cb90881572b1dd1e2c996fda6980a48e01d2e",
+    "math500_test_policy_pareto.png": "c405bea59d22c384adfca5031d7b751e486011108eaa223e368aa3ef21d311b4",
+    "math500_test_policy_pareto.pdf": "8c5ceda22a70db0e6fca3bbd4161f9be0df1ec8e08e22542b04659d2a66cedf4",
+    "cross_dataset_test_policy_pareto.png": "ed2f382b9d71f8fa9ef236ef4a80bebcdc0757d6570db1c50cfd35e4a8ba2e5d",
+    "cross_dataset_test_policy_pareto.pdf": "b0df10a55a686fe9407e524b3e3300170f0e24e11aadcec7229b9c4486ae3c1d"
+  },
+  "interpretation": "Test Pareto status is descriptive; figures do not authorize post-Test policy reselection."
+}

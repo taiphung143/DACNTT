@@ -1,0 +1,36 @@
+\begin{otherlanguage}{english}
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+
+Test-time compute can improve mathematical reasoning by extending one
+generation trajectory or sampling multiple independent trajectories, but a
+fixed configuration may waste computation on easy inputs and remain
+insufficient for difficult ones. This thesis studies adaptive allocation for a
+small open-weight reasoning model without an external verifier and accounts
+for cost using realized generated tokens.
+
+Using Qwen3-0.6B, we freeze dataset-specific action spaces, policies, and
+disjoint 100-problem Test partitions for GSM8K and MATH-500. Fixed,
+breadth-adaptive, token-cap-adaptive, and joint-heuristic policies are replayed
+against a common generation pool. Primary outcomes are exact-answer accuracy
+and realized token cost, supported by Wilson intervals, paired McNemar tests,
+latency, validity, and truncation analysis.
+
+On GSM8K, agreement stopping at $L=1024$ reaches 76\% accuracy with 1,994.52
+mean generated tokens, matching fixed $k=4,L=1024$ while using 21.3\% fewer
+tokens. On MATH-500, the Validation-selected fixed $k=2,L=4096$ policy reaches
+66\%. The joint heuristic reaches only 36\% with 5,788.81 tokens and is
+significantly worse than the selected policy. An agreement-stopping comparator
+at $L=4096$ reaches 73\%, matching the aggregate accuracy of fixed
+$k=4,L=4096$ while using approximately 20\% fewer tokens.
+
+The evidence does not support a single joint allocation rule across both
+datasets. Fixed policies selected for each dataset and policies adapting one
+axis provide stronger operating points. The primary evidence uses one
+generation seed, one model family, and two Test partitions of 100 problems.
+Non-thinking mode, the native Qwen3 budget interface, and budget forcing remain
+proposed robustness evaluations rather than completed evidence.
+
+\noindent\textbf{Keywords:} adaptive test-time compute; small reasoning models;
+breadth--token-cap allocation; efficient reasoning; Qwen3.
+\end{otherlanguage}

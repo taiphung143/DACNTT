@@ -1,5 +1,5 @@
-from answer_parser import parse_final_answer, parse_response_answers
-from evaluate import evaluate_response
+from adaptive_compute.answer_parser import parse_final_answer, parse_response_answers
+from adaptive_compute.evaluate import evaluate_response
 
 
 def test_truncate_during_thinking() -> None:
@@ -66,4 +66,3 @@ def test_final_answer_only() -> None:
     assert result.reasoning_answer is None
     assert result.final_response_answer == "42"
     assert result.answer_source == "final_response"
-

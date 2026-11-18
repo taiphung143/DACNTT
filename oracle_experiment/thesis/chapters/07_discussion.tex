@@ -1,0 +1,189 @@
+\chapter{Thảo luận}
+\label{chap:discussion}
+
+Kết quả thực nghiệm cho thấy bài toán phân bổ test-time compute không có một
+điểm vận hành chung cho mọi tập dữ liệu. Dừng lấy mẫu theo đồng thuận tạo lợi
+ích nhất quán khi so với cấu hình fixed $k=4$ tại cùng token cap. Ngược lại,
+heuristic joint dựa trên độ dài prompt không chuyển giao ổn định từ GSM8K sang
+MATH-500. Chương này diễn giải hai kết quả trên, sau đó phân loại các đe dọa độ
+giá trị và xác định các đánh giá tiếp theo có ưu tiên cao nhất.
+
+\section{Ý nghĩa của kết quả theo hai trục tài nguyên}
+
+Hai trục $k$ và $L$ giải quyết hai dạng thiếu hụt khác nhau. Tăng $L$ cho một
+quỹ đạo thêm cơ hội hoàn tất reasoning và xuất đáp án cuối; tăng $k$ tạo thêm
+lần thử và cho phép tổng hợp đáp án. Khi token cap quá thấp, nhiều mẫu đều có
+thể bị cắt trước đáp án cuối, nên breadth không bù được thiếu hụt về cap. Mẫu
+hình này thể hiện rõ trên MATH-500: các cấu hình $L=1024$ có valid rate và
+accuracy thấp dù tăng $k$.
+
+Khi $L$ đã đủ lớn, lấy bốn mẫu cho mọi bài lại trở nên lãng phí. Trên GSM8K tại
+$L=1024$, 54 câu đạt đồng thuận sau hai mẫu; trên MATH-500 tại $L=4096$, con số
+này là 57 câu. Việc không mua hai mẫu cuối ở các câu này tạo mức giảm token
+21.33\% và 19.96\% so với fixed $k=4$ tương ứng. Vector đúng--sai trong từng
+cặp hoàn toàn giống nhau trên Test-100. Bằng chứng vì vậy hỗ trợ selective
+breadth như một cơ chế tiết kiệm compute sau khi token cap đã ở mức phù hợp.
+
+Kết quả không hàm ý rằng agreement là xác suất đúng đã được hiệu chuẩn. Hai
+mẫu có thể đồng thuận trên cùng một đáp án sai. Trong hệ thống hiện tại,
+agreement chỉ là điều kiện dừng chi phí. Giá trị của nó được đánh giá bằng kết
+quả ghép cặp trên tập giữ lại, thay vì được giả định từ trước.
+
+\section{Vì sao heuristic joint không ổn định}
+
+Heuristic joint dùng tertile của độ dài prompt để chọn $L$, rồi dùng validity
+và agreement để quyết định số mẫu. Thiết kế này có ưu điểm là rẻ và không dùng
+đáp án chuẩn tại thời điểm quyết định, nhưng độ dài prompt là tín hiệu yếu cho
+độ khó suy luận. Hai câu có độ dài gần nhau có thể khác lớn về số bước, kiến
+thức toán và khả năng biểu diễn đáp án.
+
+Trên GSM8K, routing theo độ dài vẫn tạo một điểm Pareto chi phí thấp: 70/100
+với 1\,449.46 token. Tuy nhiên, trên MATH-500, joint chỉ đạt 36/100 với
+5\,788.81 token và bị fixed $k=2,L=4096$ trội cả accuracy lẫn chi phí. Dữ liệu
+trace cho thấy việc chọn cap thấp xảy ra trước; escalation theo validity hoặc
+agreement ở cùng cap không thể phục hồi một quỹ đạo đã thiếu không gian sinh.
+Sự khác biệt giữa hai tập bài cho thấy routing cần tín hiệu liên quan trực tiếp
+hơn đến nhu cầu reasoning hoặc khả năng hoàn tất, thay vì chỉ dùng kích thước
+đầu vào.
+
+Oracle hồi cứu vẫn tìm thấy headroom vì được phép nhìn đáp án chuẩn và toàn bộ
+pool của một seed. Headroom này không xác định được một rule triển khai. Một
+mẫu đúng do may mắn có thể làm oracle lạc quan, trong khi policy thực không
+biết trước mẫu nào sẽ đúng. Khoảng cách oracle do đó chỉ biểu diễn cơ hội trong
+pool quan sát được; nó không phải ước lượng về accuracy có thể đạt của một
+controller mới.
+
+\section{Hàm ý cho mô hình suy luận cỡ nhỏ}
+
+Với GPU cục bộ, compute cần được xem như một tài nguyên có giá thay vì chỉ là
+tham số tăng chất lượng. Kết quả gợi ý một quy tắc triển khai thực dụng gồm hai
+bước. Trước hết, chọn token cap đủ để valid rate không bị giới hạn nghiêm trọng
+trên Validation của miền đích. Sau đó, dùng dừng breadth có thể kiểm toán để
+tránh lấy đủ số mẫu tối đa cho mọi đầu vào.
+
+Quy tắc trên không tạo ra một policy chung cho mọi miền. GSM8K chọn adaptive
+breadth ở mức cap trung bình, còn MATH-500 chọn fixed $k=2$ tại cap cao làm
+điểm vận hành chính. Vì vậy, đóng băng policy riêng theo dataset là lựa chọn
+phù hợp hơn với bằng chứng hiện tại. Khi chuyển sang miền mới, cần lặp lại bước
+Validation thay vì mang nguyên threshold và policy từ miền cũ.
+
+Chi phí token là metric chính vì có thể so sánh giữa các lần replay tốt hơn
+latency. Latency quan sát vẫn hữu ích cho lập kế hoạch chạy, nhưng phụ thuộc
+GPU, trạng thái nhiệt, phiên bản phần mềm và cách batching. Một hệ thống triển
+khai thực tế nên báo cáo cả token, latency và bộ nhớ, song không nên dùng một
+phiên đo latency duy nhất làm kết luận tổng quát.
+
+\section{Đe dọa độ giá trị cấu trúc}
+
+Độ giá trị cấu trúc liên quan đến việc metric có đo đúng khái niệm nghiên cứu
+hay không. Bốn giới hạn chính được xác định:
+
+\begin{enumerate}
+  \item $L$ là \code{max\_new\_tokens}, không phải độ sâu suy luận ngữ nghĩa.
+  Một response dài hơn có thể lặp lại hoặc lan man mà không reasoning tốt hơn.
+  \item Hard cap có thể cắt response trước đáp án cuối. Vì vậy, tác động của
+  $L$ hiện trộn lẫn thêm thời gian suy luận với khả năng đơn thuần hoàn tất định
+  dạng output.
+  \item Exact-answer accuracy bỏ qua chất lượng reasoning trung gian. Parser
+  nghiêm ngặt giúp metric tái lập nhưng có thể tính sai một response có ý đúng
+  mà không tuân thủ định dạng đã đăng ký.
+  \item Actual generated tokens đo chi phí sinh nhưng chưa đại diện đầy đủ cho
+  năng lượng, bộ nhớ, batching hoặc thời gian người dùng chờ.
+\end{enumerate}
+
+Ba đối chứng decoding---budget forcing, native thinking budget của Qwen3 và
+non-thinking mode---là cách trực tiếp nhất để tách hiệu ứng hoàn tất output
+khỏi hiệu ứng deliberation. Chúng chưa được chạy, nên kết luận hiện tại chỉ áp
+dụng cho thinking mode với hard token cap.
+
+\section{Đe dọa độ giá trị nội tại}
+
+Thiết kế shared pool và nested prefix giảm nhiễu do các policy nhận mẫu ngẫu
+nhiên khác nhau. Manifest, model revision, prompt, parser, seed và policy ID
+được khóa; replay kiểm tra pool thiếu, khóa trùng và generation error. Các biện
+pháp này làm tăng khả năng quy khác biệt quan sát được cho policy trong cùng
+pool.
+
+Tuy vậy, nghiên cứu chỉ có một seed. Kết quả dừng breadth có vector đúng--sai
+giống fixed $k=4$ trong pool hiện tại, nhưng pool ở seed khác có thể thay đổi
+agreement và đáp án thắng. Ngoài ra, replay từ pool đã sinh mô phỏng quyết định
+tuần tự về mặt mẫu và chi phí token; nó chưa tái tạo đầy đủ scheduler, batching
+và latency của một dịch vụ online thật.
+
+Validation chỉ có 20 câu mỗi dataset, nên lựa chọn policy có độ nhiễu cao. Đối
+với MATH-500, pivot sang fixed $k=2,L=4096$ được thực hiện và ghi nhận sau
+Validation nhưng trước Test. Trình tự này bảo vệ Test khỏi tuning, song không
+làm cho ước lượng Validation trở nên chính xác hơn. Một split Validation lớn
+hơn hoặc nested resampling sẽ giảm phụ thuộc vào 20 câu cụ thể.
+
+\section{Đe dọa độ giá trị ngoại tại}
+
+Bằng chứng chính chỉ dùng Qwen3-0.6B, một model revision và hai benchmark toán.
+GSM8K và MATH-500 khác nhau về độ khó nhưng chưa đại diện cho coding, lập luận
+logic, khoa học hoặc ngôn ngữ tự nhiên nói chung. Kết quả cũng chưa cho biết
+policy có chuyển giao sang mô hình nhỏ của họ khác hay sang kích thước lớn hơn
+hay không.
+
+Pilot Qwen3-1.7B trên GSM8K hỗ trợ việc hình thành giả thuyết nhưng không phải
+đối chứng ngoại tại hoàn chỉnh. Thực nghiệm 1.7B trên MATH-500 không hoàn tất
+do giới hạn thời gian và bộ nhớ của RTX 4060. Do đó, luận văn chỉ khái quát kết
+quả đến cấu hình 0.6B đã kiểm tra; mọi phát biểu rộng hơn được giữ ở mức giả
+thuyết.
+
+\section{Đe dọa độ giá trị kết luận}
+
+Mỗi Test có 100 câu. Khoảng Wilson biểu diễn bất định do lấy mẫu câu hỏi, còn
+McNemar exact khai thác ghép cặp đúng--sai giữa hai policy. Hiệu chỉnh Holm làm
+giảm nguy cơ dương tính giả trong họ so sánh xác nhận. Tuy nhiên, các khoảng và
+kiểm định này không bao phủ biến thiên giữa seed, model revision hoặc lựa chọn
+Validation.
+
+Pareto membership được tính trên 14 policy đã đăng ký và mang tính mô tả. Nó
+có thể thay đổi khi bổ sung policy mới. Comparator breadth $L=4096$ trên
+MATH-500 là kết quả phụ đã đăng ký; accuracy 73/100 của nó không thay thế ước
+lượng chính 66/100 từ policy selected. Việc giữ nguyên hai vai trò này tránh
+chọn lại policy theo Test.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Tóm tắt đe dọa độ giá trị và biện pháp kiểm soát.}
+  \label{tab:validity-threats}
+  \scriptsize
+  \begin{tabular}{p{0.16\textwidth}p{0.31\textwidth}p{0.39\textwidth}}
+    \toprule
+    Nhóm & Đe dọa chính & Kiểm soát hoặc ranh giới diễn giải \\
+    \midrule
+    Cấu trúc & Token cap không đồng nghĩa semantic depth; hard truncation. &
+    Báo cáo valid/truncation và giới hạn claim ở hard-cap thinking mode. \\
+    Nội tại & Một seed; Validation nhỏ; replay chưa phải serving online. &
+    Shared pool, freeze record, paired analysis và mô tả pivot trước Test. \\
+    Ngoại tại & Một model 0.6B và hai benchmark toán. &
+    Không gộp pilot 1.7B; không khái quát sang họ mô hình hoặc miền khác. \\
+    Kết luận & Test-100, nhiều policy và Pareto phụ thuộc registry. &
+    Wilson, McNemar exact, Holm; Pareto chỉ mô tả và không dùng để chọn lại. \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\section{Đánh giá tiếp theo theo thứ tự ưu tiên}
+
+Trong phạm vi thời gian còn lại, công việc mới chỉ nên được thêm nếu không làm
+thay đổi đánh giá Test chính đã đóng băng. Thứ tự ưu tiên là:
+
+\begin{enumerate}
+  \item chạy ba decoding control trên Validation hoặc một split robustness
+  được khai báo riêng, tập trung vào các điểm vận hành đã chọn thay vì mở lại
+  toàn bộ lưới;
+  \item lặp thêm seed cho selected policy và comparator trực tiếp để ước lượng
+  độ nhạy ngẫu nhiên với chi phí GPU kiểm soát được;
+  \item dùng phần reserve MATH-500 làm confirmatory set mới nếu bất kỳ threshold
+  hoặc controller nào tiếp tục được phát triển;
+  \item chỉ huấn luyện learned controller sau khi thu thập đủ escalation event,
+  sau đó đánh giá trên một Test chưa từng dùng;
+  \item kiểm tra chuyển giao trên một mô hình nhỏ khác và một miền ngoài toán.
+\end{enumerate}
+
+Ba mục đầu có giá trị cao nhất cho độ tin cậy của kết luận hiện tại. Hai mục
+sau là hướng mở rộng nghiên cứu, không phải điều kiện bắt buộc để hoàn thành
+khóa luận ở quy mô hiện nay.
+

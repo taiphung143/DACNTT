@@ -1,11 +1,13 @@
 import pytest
 
-from answer_parser import (
+from adaptive_compute.answer_parser import (
     detect_thinking_state,
     normalize_numeric_answer,
     parse_final_answer,
     parse_final_answer_details,
     parse_gsm8k_ground_truth,
+    parse_gsm8k_v2_response_answers,
+    parse_gsm8k_v3_response_answers,
 )
 
 
@@ -67,3 +69,78 @@ def test_ground_truth_uses_final_hash_marker() -> None:
 )
 def test_numeric_normalization(value: str, expected: str) -> None:
     assert normalize_numeric_answer(value) == expected
+
+
+@pytest.mark.parametrize(
+    ("response", "expected"),
+    [
+        ("<think>done</think>\n#### <numeric answer> 55", "55"),
+        ("<think>done</think>\n55 #### <numeric answer>", "55"),
+        ("<think>done</think>\n#### <answer>: -3.5", "-3.5"),
+    ],
+)
+def test_gsm8k_v2_recovers_observed_placeholder_echoes(
+    response: str, expected: str
+) -> None:
+    result = parse_gsm8k_v2_response_answers(response)
+
+    assert result.final_response_answer == expected
+
+
+def test_gsm8k_v2_does_not_guess_placeholder_without_adjacent_number() -> None:
+    result = parse_gsm8k_v2_response_answers(
+        "<think>The answer is 55.</think>\n#### <numeric answer>"
+    )
+
+    assert result.reasoning_answer == "55"
+    assert result.final_response_answer is None
+
+
+def test_gsm8k_v2_does_not_use_last_intermediate_number() -> None:
+    result = parse_gsm8k_v2_response_answers(
+        "<think>done</think>\nWe compute 430 + 750 + 700 + 300."
+    )
+
+    assert result.final_response_answer is None
+
+
+@pytest.mark.parametrize(
+    ("final_line", "expected"),
+    [
+        ("Final answer: Eve gave away 15 pomelos.", "15"),
+        ("Final answer: Final answer is $20,000.", "20000"),
+        ("Final answer: It took James 1 hour.", "1"),
+        ("Final answer: -3.5 degrees.", "-3.5"),
+    ],
+)
+def test_gsm8k_v3_accepts_one_number_after_explicit_marker(
+    final_line: str, expected: str
+) -> None:
+    result = parse_gsm8k_v3_response_answers(f"<think>done</think>\n{final_line}")
+
+    assert result.final_response_answer == expected
+
+
+@pytest.mark.parametrize(
+    "final_line",
+    [
+        "Final answer: no numeric result is available.",
+        "Final answer: use 15 plus 5 to obtain 20.",
+        "The calculation contains 15 and the answer is unclear.",
+    ],
+)
+def test_gsm8k_v3_refuses_zero_multiple_or_unmarked_numbers(
+    final_line: str,
+) -> None:
+    result = parse_gsm8k_v3_response_answers(f"<think>done</think>\n{final_line}")
+
+    assert result.final_response_answer is None
+
+
+def test_gsm8k_v3_does_not_promote_reasoning_only_answer() -> None:
+    result = parse_gsm8k_v3_response_answers(
+        "<think>Final answer: 42</think>\nNo final result was provided."
+    )
+
+    assert result.reasoning_answer == "42"
+    assert result.final_response_answer is None

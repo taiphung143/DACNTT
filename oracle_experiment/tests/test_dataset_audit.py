@@ -1,9 +1,9 @@
 from pathlib import Path
 
-from analysis.oracle import select_min_cost_success
-from analysis.pareto import pareto_eligible_records
-from dataset_audit import get_dataset_quality_flag, load_manual_audit
-from reprocess_results import reprocess_record
+from adaptive_compute.analysis.oracle import select_min_cost_success
+from adaptive_compute.analysis.pareto import pareto_eligible_records
+from adaptive_compute.cli.reprocess_results import reprocess_record
+from adaptive_compute.dataset_audit import get_dataset_quality_flag, load_manual_audit
 
 
 def test_known_item_is_manually_flagged() -> None:

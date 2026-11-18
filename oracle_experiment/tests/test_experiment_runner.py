@@ -2,15 +2,15 @@ from pathlib import Path
 
 import pytest
 
-from config import ExperimentConfig
-from dataset import GSM8KProblem
-from experiment_runner import (
+from adaptive_compute.config import ExperimentConfig
+from adaptive_compute.dataset import GSM8KProblem
+from adaptive_compute.experiment_runner import (
     derive_shared_prefix,
     latest_checkpoint_records,
     run_shared_sample_pool,
     stable_sample_seed,
 )
-from models.base import GenerationResult, ModelAdapter
+from adaptive_compute.models.base import GenerationResult, ModelAdapter
 
 
 class FakeAdapter(ModelAdapter):

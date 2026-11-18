@@ -1,0 +1,219 @@
+\chapter{Phương pháp nghiên cứu}
+\label{chap:methodology}
+
+\section{Thiết kế nghiên cứu}
+
+Nghiên cứu sử dụng thiết kế thực nghiệm ghép cặp trên một kho mẫu dùng chung. Với mỗi
+bài toán, mỗi token cap và mỗi chỉ số mẫu, hệ thống sinh đúng một quỹ đạo cho lần lặp
+chính. Các cấu hình cố định và chính sách thích ứng sau đó được phát lại trên các tiền
+tố của cùng kho mẫu. Thiết kế này loại bỏ khác biệt do các policy tình cờ nhận các lần
+lấy mẫu khác nhau, đồng thời giảm số lần suy luận GPU cần thiết.
+
+Ba lớp bằng chứng được tách biệt. Phân tích Qwen3-1.7B/GSM8K là bằng chứng lịch sử dùng
+để hình thành giả thuyết. Train và Validation của Qwen3-0.6B dùng để xây dựng ngưỡng,
+chọn policy và quyết định pivot. Test-100 của GSM8K và MATH-500 là đánh giá giữ lại
+cho các claim cuối. Không điều chỉnh policy sau khi xem kết quả Test.
+
+\section{Ký hiệu và không gian hành động}
+
+Gọi $x_i$ là đề bài và $y_i$ là đáp án chuẩn của bài $i$. Một profile cố định là
+
+\begin{equation}
+  p=(k,L),
+\end{equation}
+
+trong đó $k$ là số quỹ đạo độc lập và $L$ là giới hạn token sinh trên mỗi quỹ đạo.
+Không gian breadth chung là $k\in\{1,2,4\}$. Với GSM8K, không gian depth là
+$L\in\{512,1024,2048\}$; với MATH-500, không gian depth là
+$L\in\{1024,2048,4096\}$. Mỗi dataset vì vậy có chín profile cố định.
+
+Ngân sách danh nghĩa của profile là
+
+\begin{equation}
+  B(p)=kL.
+\end{equation}
+
+Nếu $t_{ij}(L)$ là số token thật sự sinh cho mẫu $j$ của bài $i$, chi phí thực tế là
+
+\begin{equation}
+  C_i(p)=\sum_{j=1}^{k}t_{ij}(L), \qquad 0\leq t_{ij}(L)\leq L.
+  \label{eq:realized-cost}
+\end{equation}
+
+Mọi quỹ đạo policy đã yêu cầu đều xuất hiện trong tổng ở Phương trình
+\ref{eq:realized-cost}, kể cả quỹ đạo không đóng góp phiếu thắng. Latency được ghi lại
+như một metric phụ, nhưng không dùng làm cost chính vì phụ thuộc mạnh vào phần cứng và
+trạng thái hệ thống.
+
+\section{Sinh mẫu ghép cặp và tái sử dụng tiền tố}
+
+Với mỗi cặp $(i,L)$, hệ thống sinh bốn mẫu có chỉ số $0,1,2,3$. Profile $k=1$ dùng mẫu
+0; $k=2$ dùng mẫu 0--1; $k=4$ dùng mẫu 0--3. Do đó, một bài chỉ cần 12 lần sinh cho ba
+giá trị $L$, thay vì sinh lại độc lập cho từng cặp $(k,L)$.
+
+Seed của một mẫu được xác định bởi
+
+\begin{equation}
+  s_{ijr}=\operatorname{first63bits}\!\left(
+  \operatorname{SHA256}(s_0\,|\,i\,|\,r\,|\,j)\right),
+\end{equation}
+
+với $s_0$ là global seed, $r$ là repetition ID và $j$ là sample ID. Seed cố ý không
+phụ thuộc vào $k$ hoặc $L$. Cùng sample ID vì vậy dùng nguồn ngẫu nhiên ghép cặp giữa
+các token cap, còn việc không đưa $k$ vào seed bảo đảm các profile breadth là tiền tố
+lồng nhau. Global seed của thực nghiệm chính là 42 và chỉ có một repetition. Vì vậy,
+khoảng bất định thống kê phản ánh biến thiên giữa các bài, không phản ánh biến thiên
+giữa nhiều lần sinh độc lập.
+
+\section{Parse, chuẩn hóa và tổng hợp đáp án}
+
+Parser chỉ chấp nhận đáp án cuối trong các định dạng đã đăng ký: trường final answer,
+marker của GSM8K, biểu thức boxed hoặc định dạng số rõ ràng tùy dataset. Hệ thống không
+dùng quy tắc ``lấy số cuối cùng'' từ toàn bộ reasoning. Mỗi mẫu được phân loại thành
+một trong bốn trạng thái: bị cắt trong thinking, bị cắt sau thinking, hoàn tất nhưng
+không parse được, hoặc hoàn tất với đáp án hợp lệ.
+
+Gọi $V_i(p)$ là dãy đáp án chuẩn hóa hợp lệ trong $k$ mẫu. Dự đoán profile là mode của
+$V_i(p)$. Nếu có hòa phiếu, mode xuất hiện ở sample ID thấp nhất được chọn. Mẫu invalid
+không bỏ phiếu; nếu $V_i(p)=\varnothing$, profile được tính sai. Độ đồng thuận trên đáp
+án hợp lệ là
+
+\begin{equation}
+  G_i(p)=\frac{\max_a \sum_{v\in V_i(p)}\mathbf{1}[v=a]}{|V_i(p)|},
+\end{equation}
+
+khi $|V_i(p)|>0$. Tỷ lệ đáp án hợp lệ được tính trên toàn bộ $k$ mẫu. Correctness
+$A_i(p)\in\{0,1\}$ là so khớp chính xác sau chuẩn hóa giữa dự đoán tổng hợp và $y_i$.
+
+GSM8K sử dụng chuẩn hóa số; MATH-500 sử dụng parser exact cho biểu thức LaTeX thường
+gặp. Trong pilot lịch sử 1.7B, mục GSM8K có ID \code{gsm8k-test-01309} được giữ
+trong raw artifact để bảo toàn provenance nhưng bị loại khỏi metric do cờ chất
+lượng dữ liệu. Mục này không thuộc manifest Test-100 chính của thực nghiệm 0.6B.
+Nhãn gốc không bị sửa nhằm tránh thay đổi benchmark theo kết quả mô hình.
+
+\section{Các họ policy so sánh}
+
+\subsection{Profile cố định}
+
+Policy cố định áp dụng cùng một $(k,L)$ cho mọi bài. Chín profile tạo các anchor để
+kiểm tra tác động riêng của breadth và token cap. Chúng cũng là chuẩn cần thiết để
+xác định liệu một policy thích ứng có thực sự tạo điểm accuracy--token tốt hơn hay chỉ
+chọn lại một profile cố định tốn kém.
+
+\subsection{Depth-only}
+
+Depth-only luôn dùng $k=1$. Số prompt token của các bài Train được dùng để tính hai
+ngưỡng tertile bao hàm. Bài ở tertile thấp, giữa và cao lần lượt nhận ba giá trị $L$
+đã sắp tăng dần. Quy tắc này không nhìn output và không ước lượng xác suất đúng. Nó là
+baseline thích ứng theo đầu vào, dùng để kiểm tra giá trị tăng thêm của selective
+breadth.
+
+\subsection{Breadth-only agreement stopping}
+
+Breadth-only giữ một $L$ cố định. Policy luôn mua hai mẫu đầu. Nếu cả hai parse hợp lệ
+và có đáp án chuẩn hóa giống nhau, policy dừng ở $k=2$; nếu không, policy mua tiếp mẫu
+2 và 3 để đạt $k=4$. Không có nhánh dừng ở $k=1$. Tất cả mẫu đã mua được tính vào chi
+phí và dự đoán cuối được tổng hợp bằng cùng quy tắc valid-only.
+
+\subsection{Heuristic joint depth-first}
+
+Heuristic joint trước hết dùng prompt-token tertile từ Train để chọn $L$. Tại $L$ đã
+chọn, policy đọc sample pool theo thứ tự. Policy dừng ở $k=1$ khi mẫu đầu có đáp án
+cuối hợp lệ và không bị cắt; nếu điều kiện này không đạt, policy kiểm tra hai mẫu đầu
+và dừng ở $k=2$ khi cả hai hợp lệ, giống nhau; mọi trường hợp còn lại lấy đủ $k=4$.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Thông tin được phép dùng tại thời điểm ra quyết định.}
+  \label{tab:policy-signals}
+  \begin{tabular}{p{0.52\textwidth}p{0.16\textwidth}p{0.16\textwidth}}
+    \toprule
+    Tín hiệu & Được dùng & Bị cấm \\
+    \midrule
+    Số token của prompt hiện tại & Có & -- \\
+    Đáp án parse được từ mẫu đã sinh & Có & -- \\
+    Trạng thái truncated của mẫu đã sinh & Có & -- \\
+    Đáp án chuẩn của bài hiện tại & -- & Có \\
+    Nhãn/profile do oracle chọn & -- & Có \\
+    Mẫu tương lai hoặc nhánh phản thực tế & -- & Có \\
+    Kết quả Test để chỉnh ngưỡng & -- & Có \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Joint policy này không phải controller học máy. Ngưỡng tối thiểu để cho phép huấn
+luyện một stage classifier là 30 sự kiện dương trên Train; dữ liệu không đạt gate nên
+nhánh learned controller bị dừng. Quyết định này giảm nguy cơ overfit một tập sự kiện
+quá nhỏ.
+
+\section{Oracle và giới hạn diễn giải}
+
+Oracle được tính trên sample pool đã sinh để đo headroom, không được triển khai như
+một policy. Với
+
+\begin{equation}
+  \mathcal{S}_i=\{p:A_i(p)=1\},
+\end{equation}
+
+oracle chọn profile đúng có thứ tự từ điển nhỏ nhất theo
+
+\begin{equation}
+  r_i(p)=\big(C_i(p),T_i(p),B(p),k,L\big),
+\end{equation}
+
+trong đó $T_i(p)$ là latency. Nếu $\mathcal{S}_i$ rỗng, oracle chọn profile quan sát
+có thứ tự chi phí nhỏ nhất thay vì loại bài khỏi mẫu số. Quy tắc này định nghĩa rõ chi
+phí cho bài không giải được.
+
+Oracle nhìn đáp án chuẩn và chọn sau khi đã thấy mọi cấu hình, nên hưởng lợi từ các
+mẫu đúng do may mắn trong một lần sinh. Vì vậy, oracle chỉ là cận trên cơ hội của pool
+một seed. Khoảng cách giữa policy và oracle không phải bằng chứng rằng một controller
+thực tế có thể đạt mức oracle, cũng không phải ước lượng không chệch của compute tối
+ưu trong phân phối.
+
+\section{Protocol chọn và đóng băng policy}
+
+Protocol gồm bốn bước. Một là tạo split manifest tất định và kiểm tra hash câu hỏi,
+đáp án. Hai là dùng Train để tính tertile, tạo event tuần tự và kiểm tra gate của
+learned controller. Ba là dùng Validation để chọn điểm vận hành trong các policy đã
+định nghĩa trước. Bốn là tuần tự hóa policy ID, ngưỡng, action space, prompt, parser,
+seed và software hash trước khi chạy Test.
+
+Trên Validation GSM8K, breadth-only tại $L=1024$ và joint heuristic cùng đạt 15/20,
+nhưng breadth-only dùng trung bình 2095,85 token so với 2149,05; breadth-only vì vậy
+được chọn. Trên Validation MATH-500, các policy thích ứng bị các profile cố định chi
+phối; profile $k=2,L=4096$ đạt 13/20 với 4700,50 token, trong khi joint đạt 10/20 với
+5935,55 token. Profile cố định được chọn cho điểm vận hành chính của MATH-500. Đây là
+bằng chứng chọn mô hình trên Validation, không phải kết quả Test.
+
+Tổng cộng 14 policy/comparator đã đăng ký được phát lại trên mỗi Test-100. Test không
+dùng để đổi policy chính, ngưỡng hoặc parser. Pareto frontier trên Test chỉ mang tính
+mô tả cho tập policy đã đóng băng.
+
+\section{Metric và phân tích thống kê}
+
+Hai metric chính là exact-answer accuracy và số token sinh thực tế trung bình. Các
+metric phụ gồm $kL$, latency, tỷ lệ truncated, tỷ lệ đáp án hợp lệ và token trên mỗi
+bài đúng. Khoảng tin cậy 95\% cho accuracy dùng Wilson score interval, phù hợp hơn xấp
+xỉ chuẩn khi mẫu nhỏ hoặc accuracy gần biên.
+
+So sánh accuracy giữa hai policy trên cùng bài dùng exact McNemar test. Với một họ so
+sánh đã lên kế hoạch, $p$-value được hiệu chỉnh Holm. Chênh lệch accuracy và token
+được bổ sung bằng bootstrap ghép cặp ở cấp bài, tức mỗi lần bootstrap lấy lại các bài
+và giữ cặp outcome giữa hai policy. Không bootstrap từng mẫu sinh vì đơn vị suy luận
+và đơn vị chia split là bài toán.
+
+Một policy $a$ chi phối policy $b$ nếu accuracy của $a$ không thấp hơn, token trung
+bình không cao hơn và có ít nhất một bất đẳng thức nghiêm. Biên Pareto gồm các policy
+không bị chi phối. Quan hệ này mô tả hai metric quan sát; nó không tự cung cấp kiểm
+định ý nghĩa thống kê và không thay thế bảng so sánh ghép cặp.
+
+\section{Đe dọa hiệu lực được xử lý trong thiết kế}
+
+Rò rỉ Test được kiểm soát bằng manifest và policy freeze. Sai lệch do sample khác nhau
+được giảm bằng nested shared pool. Sai lệch parser được giảm bằng parser versioned,
+không last-number fallback, và giữ raw response. Sai lệch chi phí được giảm bằng actual
+generated tokens và việc tính phí mọi mẫu đã mua. Tuy vậy, thiết kế vẫn có các giới
+hạn không thể loại bỏ trong phạm vi đề tài: một repetition, một mô hình chính, hai bộ
+dữ liệu toán, và không có đối chứng decoding non-thinking/budget-forcing. Các giới hạn
+này phải được giữ khi diễn giải kết quả ở các chương sau.

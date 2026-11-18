@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from config import MODEL_ID, MODEL_REVISION, ExperimentConfig, GridConfiguration
+from adaptive_compute.config import MODEL_ID, MODEL_REVISION, ExperimentConfig, GridConfiguration
 
 
 def test_default_grid_has_expected_nine_profiles() -> None:
@@ -37,5 +37,12 @@ def test_configuration_snapshot_serializes_path() -> None:
 
 
 def test_model_checkpoint_is_selected_and_revision_pinned() -> None:
-    assert MODEL_ID == "Qwen/Qwen3-1.7B"
-    assert len(MODEL_REVISION) == 40
+    assert MODEL_ID == "Qwen/Qwen3-0.6B"
+    assert MODEL_REVISION == "c1899de289a04d12100db370d81485cdf75e47ca"
+
+
+def test_default_gsm8k_contract_is_v3() -> None:
+    config = ExperimentConfig()
+
+    assert config.prompt_template_name == "gsm8k_cot_v3"
+    assert config.answer_parser_name == "gsm8k_numeric_v3"

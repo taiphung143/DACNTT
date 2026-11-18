@@ -1,0 +1,109 @@
+\chapter{Kết luận và hướng phát triển}
+\label{chap:conclusion}
+
+\section{Trả lời câu hỏi nghiên cứu}
+
+Câu hỏi nghiên cứu xem xét liệu một policy tuần tự nhẹ, không dùng verifier,
+kết hợp phân bổ token cap và selective breadth có cải thiện biên
+accuracy--actual-generated-token so với fixed, depth-only và breadth-only hay
+không. Với điều kiện đã kiểm tra, câu trả lời là \emph{chưa có bằng chứng ủng hộ
+một joint allocation rule chung}.
+
+Joint heuristic tạo một điểm Pareto chi phí thấp trên GSM8K nhưng đạt 36/100
+trên MATH-500, thấp hơn 30 điểm và tốn nhiều hơn policy selected fixed
+$k=2,L=4096$. Khác biệt ghép cặp vẫn có ý nghĩa sau hiệu chỉnh Holm. Vì vậy,
+phần joint của giả thuyết không được hỗ trợ trên cả hai dataset.
+
+Một kết quả hẹp hơn được hỗ trợ nhất quán: khi $L$ đã cố định ở mức phù hợp,
+dừng breadth theo agreement giảm số mẫu phải trả mà giữ nguyên vector
+đúng--sai so với fixed $k=4$ trong hai Test pool. Mức giảm token là 21.33\%
+trên GSM8K tại $L=1024$ và 19.96\% trên MATH-500 tại $L=4096$. Selective
+breadth vì vậy cải thiện hiệu quả so với fixed high breadth, nhưng chưa chứng
+minh được lợi thế của một controller kết hợp so với mọi baseline một trục.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Kết luận theo từng thành phần của câu hỏi nghiên cứu.}
+  \label{tab:rq-answer}
+  \small
+  \begin{tabular}{p{0.26\textwidth}p{0.43\textwidth}p{0.19\textwidth}}
+    \toprule
+    Thành phần & Bằng chứng Test đã hoàn tất & Kết luận \\
+    \midrule
+    Selective breadth so với fixed $k=4$ &
+    Cùng vector đúng--sai; giảm 21.33\% token trên GSM8K và 19.96\% trên
+    MATH-500. & Được hỗ trợ trong hai pool. \\
+    Joint so với policy selected &
+    Pareto trên GSM8K; bị dominated và kém 30 điểm trên MATH-500. &
+    Không được hỗ trợ xuyên dataset. \\
+    Policy chung cho hai miền &
+    Điểm vận hành tốt nhất phụ thuộc dataset và action space. &
+    Chưa có bằng chứng. \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\section{Đóng góp đã hoàn thành}
+
+Khóa luận hoàn thành bốn đóng góp trong phạm vi đã chốt:
+
+\begin{enumerate}
+  \item Một pipeline đánh giá có manifest bất biến, generation cache,
+  checkpoint tiếp tục sau gián đoạn, parser versioned, nested sample pool và
+  policy replay. Chi phí được tính theo token thật sự đã sinh cho mọi mẫu policy
+  mua.
+  \item Một protocol Train--Validation--Test tách biệt cho GSM8K và MATH-500,
+  gồm freeze record và 14 policy/comparator đăng ký trước khi tổng hợp Test.
+  \item Bằng chứng Test-100 ghép cặp cho lợi ích chi phí của agreement-based
+  breadth stopping trên cả hai dataset tại các token cap tương ứng.
+  \item Một kết quả âm có thể kiểm toán: routing theo prompt-length tertile
+  không tạo joint policy ổn định và thất bại rõ trên MATH-500.
+\end{enumerate}
+
+Đóng góp phương pháp nằm ở tính tái lập và ranh giới diễn giải. Kết quả từ
+pilot 1.7B, Train/Validation và Test chính được tách riêng. Learned controller
+không vượt training gate nên không được báo cáo như thành phần đã triển khai.
+Oracle chỉ được dùng để đo opportunity headroom của pool.
+
+\section{Khuyến nghị sử dụng kết quả}
+
+Đối với hệ thống suy luận nhỏ chạy cục bộ, kết quả hiện tại hỗ trợ ba khuyến
+nghị. Một là chọn token cap theo Validation của từng miền và theo dõi valid rate
+trước khi tăng số mẫu. Hai là dùng agreement stopping để giảm lấy mẫu dư thừa
+khi baseline dự kiến lấy nhiều mẫu. Ba là đóng băng threshold, parser và policy
+trước đánh giá giữ lại; mọi thay đổi sau đó cần một confirmatory set mới.
+
+Không nên dùng prompt length như tín hiệu difficulty duy nhất cho bài toán có
+độ đa dạng cao như MATH-500. Nếu chưa có dữ liệu đủ để học controller, một
+fixed profile được chọn minh bạch có thể đáng tin cậy hơn một heuristic joint
+phức tạp nhưng hiệu chỉnh kém.
+
+\section{Hướng phát triển}
+
+Hướng gần nhất là bổ sung robustness evaluation mà không mở lại Test chính.
+Ba decoding control cần thiết gồm non-thinking mode, native thinking-budget
+control của Qwen3 và budget forcing. Chúng sẽ kiểm tra bao nhiêu lợi ích của
+token cap đến từ reasoning bổ sung và bao nhiêu đến từ tránh cắt response.
+
+Tiếp theo, selected policy và comparator trực tiếp nên được chạy ở nhiều seed.
+Nếu tiếp tục phát triển joint controller, dữ liệu Train phải có đủ sự kiện
+escalation dương, còn threshold và mô hình controller phải được chốt trước khi
+đánh giá trên reserve hoặc Test mới. Các đặc trưng tiềm năng có thể gồm tín
+hiệu uncertainty hợp lệ, hành vi truncation sớm và đặc trưng bài toán không
+dùng ground truth; hiệu quả của chúng cần được kiểm tra thay vì giả định.
+
+Cuối cùng, đánh giá nên mở rộng sang một mô hình nhỏ thuộc họ khác, một kích
+thước Qwen3 lớn hơn khi phần cứng cho phép và ít nhất một miền ngoài toán. Khi
+đó mới có thể đánh giá khả năng chuyển giao của policy và mức độ phụ thuộc vào
+model family.
+
+\section{Kết luận cuối cùng}
+
+Khóa luận cho thấy adaptive test-time compute ở mô hình nhỏ cần được đánh giá
+như một bài toán phân bổ chi phí có kiểm soát. Tăng compute không bảo đảm tăng
+accuracy, và oracle headroom không tự chuyển thành controller triển khai được.
+Trong phạm vi Qwen3-0.6B, selective breadth dựa trên đồng thuận cung cấp mức
+tiết kiệm token cụ thể, còn joint heuristic hiện tại không ổn định giữa GSM8K
+và MATH-500. Kết quả hợp lý nhất là sử dụng policy riêng theo dataset, báo cáo
+chi phí token thực tế và giữ quy trình freeze--replay--paired evaluation khi
+phát triển những controller mạnh hơn.

@@ -1,0 +1,129 @@
+\chapter{Kết quả thực nghiệm}
+\label{chap:results}
+
+Chương này tách rõ bằng chứng thăm dò lịch sử khỏi kết quả xác nhận chính. Kết
+quả chính bên dưới được tính từ hai tập Test-100 sau khi policy đã được đóng
+băng. Các bảng đầy đủ gồm toàn bộ 14 policy, kể cả những policy không nằm trên
+đường Pareto, nhằm tránh chỉ báo cáo các cấu hình thuận lợi.
+
+\section{Bằng chứng thăm dò từ mô hình 1.7B}
+
+Thực nghiệm Qwen3-1.7B trước khi chốt protocol chính dùng GSM8K và revision có
+tiền tố \code{70d244cc}. Manifest chứa 100 câu, trong đó 99 câu dùng được cho
+phân tích định lượng; toàn bộ lưới có 1\,200 bản ghi. Hình
+\ref{fig:historical-heatmap} cho thấy accuracy tăng khi tăng cả $k$ và $L$,
+đồng thời mức cải thiện theo depth nổi bật trong cấu hình pilot. Quan sát này
+chỉ tạo giả thuyết và đã được dùng để thiết kế protocol 0.6B; nó không được gộp
+với Test chính và không được xem là bằng chứng xác nhận cho Research Question.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.72\textwidth]{accuracy_heatmap.png}
+  \caption{Heatmap accuracy của thực nghiệm lịch sử Qwen3-1.7B trên 99 câu
+  GSM8K dùng được. Tiêu đề ``pilot items'' trong hình phản ánh đúng vai trò
+  thăm dò của artifact gốc.}
+  \label{fig:historical-heatmap}
+\end{figure}
+
+\section{Kết quả chính trên hai tập Test}
+
+Bảng~\ref{tab:primary-test-results} trình bày các điểm vận hành cần thiết để
+trả lời câu hỏi nghiên cứu. ``Selected'' là policy được chọn trên Validation
+trước khi đọc Test; các comparator fixed và adaptive còn lại được lấy từ cùng
+registry đã đóng băng.
+
+\input{generated/06_main_results}
+
+Hình~\ref{fig:cross-dataset-pareto} biểu diễn toàn bộ 14 policy của mỗi bộ dữ
+liệu trong không gian accuracy--token. Vòng tròn đen đánh dấu policy selected;
+đường nét đứt chỉ đường biên Pareto mô tả. Hình được sinh từ summary Test chính
+và có dữ liệu thật, không phải khung giữ chỗ.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{cross_dataset_test_policy_pareto.pdf}
+  \caption{Accuracy và chi phí token của 14 policy đã đăng ký trên GSM8K và
+  MATH-500 Test. Policy selected được quyết định trên Validation.}
+  \label{fig:cross-dataset-pareto}
+\end{figure}
+
+\section{GSM8K: dừng breadth giữ nguyên độ chính xác với chi phí thấp hơn}
+
+Policy selected breadth-only tại $L=1024$ đạt 76/100, khoảng Wilson 95\%
+$[66.8,83.3]$, với 1\,994.52 token mỗi câu. Policy fixed $k=4,L=1024$ cũng
+đạt 76/100 nhưng tốn 2\,535.17 token. Hai policy đúng và sai trên chính xác
+cùng các câu Test (discordant 0/0), trong khi breadth stopping giảm 540.65
+token, tương đương 21.33\% chi phí token. Policy dừng sau hai mẫu ở 54/100 câu
+và dùng bốn mẫu ở 46/100 câu. Đây là bằng chứng trực tiếp rằng dừng theo đồng
+thuận có thể loại bỏ mẫu dư thừa trong pool đã sinh mà không giảm accuracy ở
+Test này.
+
+Joint heuristic đạt 70/100 với 1\,449.46 token. So với joint, policy selected
+tăng 6 điểm phần trăm nhưng trả thêm 545.06 token. Bảng ghép cặp có 7 câu chỉ
+selected đúng và 1 câu chỉ joint đúng; McNemar exact cho $p=0.0703$, và
+$p_{\mathrm{Holm}}=0.4922$. Vì vậy dữ liệu chưa đủ để khẳng định khác biệt
+accuracy có ý nghĩa thống kê, dù hai điểm vận hành tạo ra đánh đổi chi phí--độ
+chính xác khác nhau.
+
+\section{MATH-500: joint heuristic không chuyển giao ổn định}
+
+Policy selected fixed $k=2,L=4096$ đạt 66/100, khoảng Wilson 95\%
+$[56.3,74.5]$, với 5\,141.50 token. Joint heuristic chỉ đạt 36/100 và tốn
+5\,788.81 token; do đó bị trội cả về accuracy lẫn token. So sánh ghép cặp có
+33 câu chỉ selected đúng và 3 câu chỉ joint đúng. McNemar exact cho
+$p=2.27\times10^{-7}$ và sau điều chỉnh Holm còn
+$p_{\mathrm{Holm}}=2.50\times10^{-6}$. Kết quả này bác bỏ việc xem joint
+heuristic hiện tại là controller đa dữ liệu đã thành công.
+
+Comparator breadth-only tại $L=4096$ đạt 73/100 với 8\,191.12 token, bằng
+accuracy của fixed $k=4,L=4096$ nhưng thấp hơn 2\,042.05 token, tương đương
+19.96\%. Hai policy một lần nữa có discordant 0/0. Breadth policy dừng ở hai
+mẫu cho 57 câu và dùng bốn mẫu cho 43 câu. Kết quả này lặp lại lợi ích loại bỏ
+sampling dư thừa, nhưng tại một điểm vận hành tốn chi phí hơn policy selected
+và có accuracy cao hơn 7 điểm; luận văn không diễn giải chênh lệch đó như một
+so sánh đã được chọn trước giữa hai policy.
+
+\section{Phân tích ghép cặp}
+
+Bảng~\ref{tab:paired-policy-results} tổng hợp các so sánh chính. Chênh lệch
+token âm nghĩa là policy đứng trước rẻ hơn. Với các cặp breadth--fixed có
+discordant 0/0, $p=1$ phản ánh không có khác biệt accuracy quan sát được; bằng
+chứng hữu ích nằm ở phần giảm chi phí trên cùng vector đúng--sai.
+
+\input{generated/06_paired_comparisons}
+
+Kết quả trả lời revised RQ theo hai phần. Thứ nhất, adaptive breadth tạo ra
+điểm vận hành chi phối comparator fixed-$k=4$ tương ứng trên cả hai dữ liệu.
+Thứ hai, heuristic joint dựa trên độ dài prompt không đủ ổn định: nó vẫn nằm
+trên Pareto GSM8K nhưng bị dominated rõ rệt trên MATH-500. Do đó đóng góp thực
+nghiệm hiện tại là giao thức đánh giá và bằng chứng về breadth stopping, không
+phải một learned joint controller hoàn chỉnh.
+
+\section{Bảng kết quả đầy đủ}
+
+Bảng~\ref{tab:gsm8k-all-policies} và Bảng~\ref{tab:math500-all-policies} báo
+cáo toàn bộ registry. Cột ``Valid'' là tỷ lệ câu có ít nhất một đáp án hợp lệ
+sau aggregation; ``Truncated'' là tỷ lệ paid sample chạm giới hạn sinh, không
+phải tỷ lệ câu hỏi. Cột Pareto được tính trong tập 14 policy đã đăng ký.
+
+\input{generated/06_gsm8k_all_policies}
+\clearpage
+\input{generated/06_math500_all_policies}
+
+Các bảng cho thấy tăng ngân sách không bảo đảm cải thiện đơn điệu. Trên GSM8K,
+nhiều cấu hình $L=2048$ tốn chi phí cao hơn mà không vượt policy selected. Trên
+MATH-500, ngân sách sâu giúp tăng valid rate và accuracy, nhưng joint routing
+đã đưa quá nhiều câu vào nhánh không hiệu quả. Đây là bằng chứng định lượng cho
+nhu cầu thiết kế tín hiệu routing tốt hơn; chưa phải bằng chứng rằng một
+controller học được chắc chắn sẽ giải quyết vấn đề.
+
+\section{Giới hạn của bằng chứng kết quả}
+
+Kết quả được giới hạn ở một model revision, một seed sinh và 100 câu Test mỗi
+bộ dữ liệu. Khoảng Wilson phản ánh bất định do số câu hỏi, nhưng không bao phủ
+biến thiên giữa seed hoặc revision. Pool dùng chung tạo so sánh nội bộ công
+bằng, song chưa chứng minh hành vi của một hệ thống sinh tuần tự trực tuyến có
+thể tái lập hoàn toàn chi phí wall-clock. Ngoài ra, oracle ground-truth-aware
+chỉ là opportunity bound và không được dùng như baseline triển khai. Những
+giới hạn này được phân tích sâu hơn trong chương thảo luận tiếp theo.
+

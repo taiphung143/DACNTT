@@ -1,0 +1,120 @@
+\chapter{Thiết lập thực nghiệm}
+\label{chap:experimental-setup}
+
+Chương này mô tả cấu hình đã được dùng để tạo ra bằng chứng thực nghiệm chính,
+không phải một kế hoạch thực nghiệm trong tương lai. Mọi kết quả chính sử dụng
+mô hình Qwen3-0.6B, các tập chia đã đóng băng và danh sách policy đã đăng ký
+trước khi đọc nhãn Test. Thực nghiệm Qwen3-1.7B trước đó chỉ được giữ như bằng
+chứng thăm dò lịch sử và không được gộp vào kết quả chính.
+
+\section{Bộ dữ liệu và giao thức chia tập}
+
+Hai bộ dữ liệu được chọn để tạo ra hai mức độ khó bổ sung cho nhau. GSM8K gồm
+các bài toán đố số học cấp phổ thông~\cite{cobbe2021gsm8k}; MATH-500 lấy mẫu
+từ tập MATH, bao phủ nhiều chủ đề và mức độ khó hơn~\cite{hendrycks2021math}.
+Các manifest cố định khóa danh tính và thứ tự câu hỏi. Train chỉ được dùng để
+đặt ngưỡng cho heuristic; Validation dùng để chọn policy; Test chỉ được mở sau
+khi policy đã được đóng băng.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Các tập chia dùng trong thực nghiệm chính.}
+  \label{tab:dataset-splits}
+  \small
+  \begin{tabular}{lrrrrp{0.29\textwidth}}
+    \toprule
+    Dữ liệu & Train & Validation & Test & Reserve & Cách lấy mẫu \\
+    \midrule
+    GSM8K & 79 & 20 & 100 & 0 & Lấy mẫu cố định từ split chuẩn, khóa bằng manifest. \\
+    MATH-500 & 80 & 20 & 100 & 300 & Phân tầng theo chủ đề và độ khó; phần còn lại được giữ dự phòng. \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Các câu Test chỉ được dùng cho báo cáo xác nhận. Không có ngưỡng, nhánh quyết
+định hay lựa chọn policy nào được hiệu chỉnh lại từ kết quả Test. Với MATH-500,
+300 câu reserve chưa được dùng trong các con số của luận văn hiện tại; chúng
+được giữ cho đánh giá mở rộng nếu thời gian và tài nguyên cho phép.
+
+\section{Mô hình và cấu hình sinh}
+
+Mô hình chính là Qwen3-0.6B~\cite{qwen3report}, tại revision đầy đủ
+{\small\texttt{c1899de2\allowbreak 89a04d12\allowbreak 100db370\allowbreak
+d81485cd\allowbreak f75e47ca}}. Mô hình chạy trên CUDA với
+\code{bfloat16}. Mọi ô ngân sách dùng cùng nhiệt độ $0.7$, top-$p=0.95$ và
+seed 42. Chế độ thinking được bật trong toàn bộ lưới chính. Những đối chứng
+non-thinking, native thinking-budget và budget forcing chưa được thực hiện;
+do đó chúng được ghi nhận là giới hạn và công việc tiếp theo, không phải bằng
+chứng đã hoàn tất.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Không gian hành động và hợp đồng chấm điểm.}
+  \label{tab:generation-grid}
+  \small
+  \begin{tabular}{lp{0.22\textwidth}p{0.24\textwidth}p{0.24\textwidth}}
+    \toprule
+    Dữ liệu & Số mẫu $k$ & Giới hạn $L$ (token) & Prompt / parser \\
+    \midrule
+    GSM8K & $\{1,2,4\}$ & $\{512,1024,2048\}$ & \code{gsm8k\_cot\_v3} / \code{gsm8k\_numeric\_v3} \\
+    MATH-500 & $\{1,2,4\}$ & $\{1024,2048,4096\}$ & \code{math500\_cot\_v1} / \code{math500\_exact\_v2} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Mỗi bài toán được sinh bốn mẫu ứng viên ở mỗi mức $L$. Các policy có $k<4$
+được replay từ cùng pool theo thứ tự mẫu cố định. Thiết kế shared-pool này làm
+cho so sánh ghép cặp về độ chính xác và chi phí không bị nhiễu bởi việc sinh
+lại ở seed khác. Token được báo cáo là chi phí thực trả cho những mẫu mà policy
+đã sử dụng, theo định nghĩa ở Chương~\ref{chap:methodology}.
+
+\section{Danh sách policy và quy tắc đóng băng}
+
+Mỗi bộ dữ liệu có đúng 14 policy xác nhận: chín policy fixed tạo bởi tích
+Descartes $k\times L$; một heuristic depth-only; ba policy breadth-only tại ba
+mức $L$; và một heuristic joint. Heuristic breadth sinh tuần tự rồi dừng khi
+hai đáp án hợp lệ đồng thuận; nếu chưa đủ bằng chứng, policy tiếp tục đến tối
+đa bốn mẫu. Heuristic joint chọn nhánh ngân sách từ tín hiệu chỉ dựa trên đầu
+vào, sau đó áp dụng quy tắc dừng breadth. Nó là quy tắc xác định, không phải
+controller được học.
+
+Các ngưỡng độ dài prompt được ước lượng chỉ trên Train. Với GSM8K, hai ngưỡng
+là 117 và 132 token; với MATH-500, chúng là 79.33 và 109.67 token. Một
+controller học máy đã được thiết kế ở mức giao diện, nhưng không được fit vì
+số sự kiện cải thiện dương trên Train không đủ để huấn luyện đáng tin cậy.
+
+Trên GSM8K Validation, policy được chọn là
+\texttt{breadth\_\allowbreak only\_\allowbreak agreement\_\allowbreak
+L1024\_\allowbreak v1}, đạt 15/20 câu với chi phí trung
+bình 2\,095.85 token. Trên MATH-500 Validation, kết quả cho thấy heuristic
+joint không đủ ổn định; nhóm thực hiện một pivot minh bạch trước khi mở Test và
+đóng băng policy fixed $k=2,L=4096$, đạt 13/20 câu với 4\,700.50 token. Hai
+bản ghi freeze lần lượt mang ngày 12 và 14 tháng 11 năm 2026. Việc pivot này là
+một quyết định phương pháp đã hoàn tất, không phải lựa chọn hậu nghiệm trên
+Test.
+
+\section{Kiểm tra tính đầy đủ và toàn vẹn}
+
+Trước khi tổng hợp kết quả, script sinh bảng kiểm tra số bản ghi kỳ vọng, lỗi
+sinh và khóa trùng. Mỗi lưới có $100\times3\times4=1\,200$ bản ghi: 100 bài,
+ba mức $L$, bốn sample index. Kết quả kiểm tra được trình bày trong
+Bảng~\ref{tab:test-grid-completeness}.
+
+\input{generated/05_experiment_completeness}
+
+Ngoài số lượng bản ghi, quá trình tổng hợp còn kiểm tra ba bất biến: (i) danh
+sách policy trong summary và Pareto phải trùng với 14 policy của freeze record;
+(ii) policy được đánh dấu selected phải trùng ID đã đóng băng; và (iii) mỗi
+dòng summary phải thuộc split Test với $n=100$. Bảng trong Chương~\ref{chap:results}
+được sinh trực tiếp từ các CSV/JSON đã đóng băng; không sao chép số liệu thủ
+công từ bài báo.
+
+\section{Kế hoạch phân tích thống kê}
+
+Độ chính xác được báo cáo cùng khoảng tin cậy Wilson 95\%. Với so sánh hai
+policy trên cùng câu hỏi, luận văn dùng bảng discordant và kiểm định McNemar
+exact hai phía. Giá trị $p$ của họ so sánh xác nhận được điều chỉnh Holm. Đường
+Pareto accuracy--token là mô tả trên tập policy đã đăng ký, không phải kiểm
+định giả thuyết độc lập. Mọi kết luận đều giới hạn ở một revision mô hình, một
+seed và hai tập Test-100; khác biệt không có ý nghĩa thống kê được mô tả là xu
+hướng hoặc quan sát, không được nâng thành khẳng định tổng quát.

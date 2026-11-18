@@ -4,7 +4,11 @@ from typing import Any
 
 import pytest
 
-from dataset import extend_gsm8k_subset_manifest, load_gsm8k_subset, select_problem_indices
+from adaptive_compute.dataset import (
+    extend_gsm8k_subset_manifest,
+    load_gsm8k_subset,
+    select_problem_indices,
+)
 
 
 def _records() -> list[dict[str, str]]:

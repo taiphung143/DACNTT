@@ -1,0 +1,331 @@
+{
+  "schema_version": 1,
+  "manifest_type": "math500_stratified_development_pilot",
+  "status": "frozen",
+  "dataset": "math500",
+  "dataset_id": "HuggingFaceH4/MATH-500",
+  "dataset_revision": "6e4ed1a2a79af7d8630a6b768ec859cb5af4d3be",
+  "split": "test",
+  "selection_policy": "subject-level-round-robin-v1",
+  "num_problems": 30,
+  "seed": 42,
+  "dataset_size": 500,
+  "subject_counts": {
+    "Algebra": 4,
+    "Counting & Probability": 4,
+    "Geometry": 5,
+    "Intermediate Algebra": 3,
+    "Number Theory": 5,
+    "Prealgebra": 5,
+    "Precalculus": 4
+  },
+  "level_counts": {
+    "1": 6,
+    "2": 6,
+    "3": 5,
+    "4": 7,
+    "5": 6
+  },
+  "problems": [
+    {
+      "problem_id": "math500-test-444",
+      "source_index": 444,
+      "unique_id": "test/counting_and_probability/731.json",
+      "subject": "Counting & Probability",
+      "level": 5,
+      "question_sha256": "00b6972ed54573b5eba6f57c78bbf587bc78e51c163fb90c331035f8128610e8",
+      "answer_sha256": "e7e9536310cdba7ff948771f791cefe32f99b73c608778c9660db79e4926e9f9",
+      "ground_truth": "1/2"
+    },
+    {
+      "problem_id": "math500-test-177",
+      "source_index": 177,
+      "unique_id": "test/geometry/65.json",
+      "subject": "Geometry",
+      "level": 3,
+      "question_sha256": "fee7f83b365251b3d97eafb5cb3c0b2dde779d9129d6d0f787148f7c616bcc7e",
+      "answer_sha256": "e5238611aea8727fece9d6002c1f3dc386335348a5521b6e65d36e794118d3ac",
+      "ground_truth": "30"
+    },
+    {
+      "problem_id": "math500-test-362",
+      "source_index": 362,
+      "unique_id": "test/counting_and_probability/14.json",
+      "subject": "Counting & Probability",
+      "level": 1,
+      "question_sha256": "ee02cd5b28fb246421a02d67e994fe9a2ab8ac30a70dd349ce65f60e2e4d87e0",
+      "answer_sha256": "3de3f031cb11635ec2b58c78302b38c1eaffa43058d34a9c25257c1787211ffb",
+      "ground_truth": "1/4"
+    },
+    {
+      "problem_id": "math500-test-268",
+      "source_index": 268,
+      "unique_id": "test/number_theory/466.json",
+      "subject": "Number Theory",
+      "level": 1,
+      "question_sha256": "ded0ffd3643d01300751d58ce6b747aa56f9e8f460bbcf7d41a4fee1fc747961",
+      "answer_sha256": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b",
+      "ground_truth": "1"
+    },
+    {
+      "problem_id": "math500-test-233",
+      "source_index": 233,
+      "unique_id": "test/precalculus/441.json",
+      "subject": "Precalculus",
+      "level": 2,
+      "question_sha256": "0a44d33216778365bc679c332711e6b807edb57bc5bf7c3cefa22152ba1f1106",
+      "answer_sha256": "e5238611aea8727fece9d6002c1f3dc386335348a5521b6e65d36e794118d3ac",
+      "ground_truth": "30"
+    },
+    {
+      "problem_id": "math500-test-003",
+      "source_index": 3,
+      "unique_id": "test/number_theory/572.json",
+      "subject": "Number Theory",
+      "level": 3,
+      "question_sha256": "32c3cda4fa5ff5d18cbac4e45b23dcf4833ddf37179609d1614e2403e68096ef",
+      "answer_sha256": "19581e27de7ced00ff1ce50b2047e7a567c76b1cbaebabe5ef03f7c3017bb5b7",
+      "ground_truth": "9"
+    },
+    {
+      "problem_id": "math500-test-434",
+      "source_index": 434,
+      "unique_id": "test/prealgebra/1640.json",
+      "subject": "Prealgebra",
+      "level": 5,
+      "question_sha256": "de1eea26a5aa7c7215223373e7e33a62068b3810ebebf3c6f70a2e430d482d75",
+      "answer_sha256": "e29c9c180c6279b0b02abd6a1801c7c04082cf486ec027aa13515e4f3884bb6b",
+      "ground_truth": "32"
+    },
+    {
+      "problem_id": "math500-test-036",
+      "source_index": 36,
+      "unique_id": "test/intermediate_algebra/428.json",
+      "subject": "Intermediate Algebra",
+      "level": 2,
+      "question_sha256": "5b1d584cfe23d7dfff67df8a57030f07ab525f50d4dbe0cb7cb63ae686a80456",
+      "answer_sha256": "285bf04b8731cba4dbb4336ff475cc3b41b6c49948a87fc77f5065d82930b5cc",
+      "ground_truth": "357"
+    },
+    {
+      "problem_id": "math500-test-059",
+      "source_index": 59,
+      "unique_id": "test/prealgebra/1247.json",
+      "subject": "Prealgebra",
+      "level": 2,
+      "question_sha256": "f847551cef56a63f57b96892edf1e4c79434413c8ffd78b29c46f3c29a2b8e0e",
+      "answer_sha256": "ef2d127de37b942baad06145e54b0c619a1f22327b2ebbcfbec78f5564afe39d",
+      "ground_truth": "5"
+    },
+    {
+      "problem_id": "math500-test-482",
+      "source_index": 482,
+      "unique_id": "test/number_theory/1090.json",
+      "subject": "Number Theory",
+      "level": 5,
+      "question_sha256": "d1e39ceb48a9c9f1b5daa6084c7c3aa678dbca1469898bab2924bd5422b8c7c6",
+      "answer_sha256": "c17edaae86e4016a583e098582f6dbf3eccade8ef83747df9ba617ded9d31309",
+      "ground_truth": "202"
+    },
+    {
+      "problem_id": "math500-test-154",
+      "source_index": 154,
+      "unique_id": "test/geometry/880.json",
+      "subject": "Geometry",
+      "level": 5,
+      "question_sha256": "88bd1d429ff4da88607a105612c2de0c8e98bd61cfdfa852a96a537fea183c3b",
+      "answer_sha256": "a21f3f8ad9791022f38c7260db7c27e31b0d27d62fb0f38482d9633c53a7c368",
+      "ground_truth": "2\\sqrt{113}"
+    },
+    {
+      "problem_id": "math500-test-018",
+      "source_index": 18,
+      "unique_id": "test/geometry/434.json",
+      "subject": "Geometry",
+      "level": 1,
+      "question_sha256": "756bd921400e3e92899a7ae77c8fedae8519f96ef58229d69b2b8ab6254edc6d",
+      "answer_sha256": "59e19706d51d39f66711c2653cd7eb1291c94d9b55eb14bda74ce4dc636d015a",
+      "ground_truth": "28"
+    },
+    {
+      "problem_id": "math500-test-372",
+      "source_index": 372,
+      "unique_id": "test/geometry/846.json",
+      "subject": "Geometry",
+      "level": 2,
+      "question_sha256": "3d98cbe03f36e34340e07b4b7dcd7c909cceb7a18c025056f646f8324f9951e5",
+      "answer_sha256": "a8985d93b216df9786d5eef0b68dee24a90457efb561a89da90a4f3f7ebef3be",
+      "ground_truth": "90"
+    },
+    {
+      "problem_id": "math500-test-256",
+      "source_index": 256,
+      "unique_id": "test/prealgebra/1995.json",
+      "subject": "Prealgebra",
+      "level": 3,
+      "question_sha256": "746a8f87097718e59867d0bf42db8a53283e76aec18b6741587f738f933924a4",
+      "answer_sha256": "5ddeb0a4ba4f2004a217f1352d441ce94ac5f43acb8810b309aeb7c9fe84fcf8",
+      "ground_truth": "8/21"
+    },
+    {
+      "problem_id": "math500-test-153",
+      "source_index": 153,
+      "unique_id": "test/counting_and_probability/230.json",
+      "subject": "Counting & Probability",
+      "level": 4,
+      "question_sha256": "32d24bfc1d7f259ce3bc48722331c7054344de647afd24da313f03e681012d00",
+      "answer_sha256": "d286cbc68a203ec1b7ba6bf20b0985d2418c5a48dc790a7dcae7d254a2283202",
+      "ground_truth": "2/21"
+    },
+    {
+      "problem_id": "math500-test-184",
+      "source_index": 184,
+      "unique_id": "test/intermediate_algebra/183.json",
+      "subject": "Intermediate Algebra",
+      "level": 5,
+      "question_sha256": "ff2cf3ad64c19d720b0c752331e0ef05cabcc1cde327a0751efe498fde07f938",
+      "answer_sha256": "775ac87d899579f8eec7fac4bc2ad816710c6603c7cfb41c45430708a3a1b1a3",
+      "ground_truth": "(2,\\infty)"
+    },
+    {
+      "problem_id": "math500-test-370",
+      "source_index": 370,
+      "unique_id": "test/precalculus/1289.json",
+      "subject": "Precalculus",
+      "level": 1,
+      "question_sha256": "a4363ea671d3da39e33e5cd154c34aec2532bf8a79064553c5b5647aa07da7c5",
+      "answer_sha256": "5198f7a7fbd082a145d39cb002d4a3038278490490fcff324bb172577ef9a8ac",
+      "ground_truth": "-41"
+    },
+    {
+      "problem_id": "math500-test-455",
+      "source_index": 455,
+      "unique_id": "test/counting_and_probability/190.json",
+      "subject": "Counting & Probability",
+      "level": 2,
+      "question_sha256": "9ae18bc14bcf30c1e46ca2d4d5896d14f3f4abc83849e1a2a6d1c40bbd30f6be",
+      "answer_sha256": "e7f6c011776e8db7cd330b54174fd76f7d0216b612387a5ffcfb81e6f0919683",
+      "ground_truth": "6"
+    },
+    {
+      "problem_id": "math500-test-086",
+      "source_index": 86,
+      "unique_id": "test/prealgebra/307.json",
+      "subject": "Prealgebra",
+      "level": 1,
+      "question_sha256": "4f5c7595557fb7e122155baf08f5bc9bb95ef916f235385497e3e4eb4e33b1fd",
+      "answer_sha256": "6af1f692e9496c6d0b668316eccb93276ae6b6774fa728aac31ff40a38318760",
+      "ground_truth": "240"
+    },
+    {
+      "problem_id": "math500-test-336",
+      "source_index": 336,
+      "unique_id": "test/algebra/2592.json",
+      "subject": "Algebra",
+      "level": 1,
+      "question_sha256": "73f279c3087035a428ddfa8b678a3b33080f9d49026eedc4563c46d8c580c753",
+      "answer_sha256": "890fd025edbcc52422a48404936f1654d077408ee52231de4c4a2a22cef53f3c",
+      "ground_truth": "26000"
+    },
+    {
+      "problem_id": "math500-test-064",
+      "source_index": 64,
+      "unique_id": "test/precalculus/1146.json",
+      "subject": "Precalculus",
+      "level": 4,
+      "question_sha256": "4b45f05d1f26889026203b9f80fc088e7f9553cca26509acdc979830d027208a",
+      "answer_sha256": "0f23ac0e34bd659cfb55eff72f0f8f70ddb8412f49d281f17532c148381f916a",
+      "ground_truth": "35/64"
+    },
+    {
+      "problem_id": "math500-test-324",
+      "source_index": 324,
+      "unique_id": "test/geometry/465.json",
+      "subject": "Geometry",
+      "level": 4,
+      "question_sha256": "3b3ed529a4b09aebcc4d3a6b61237641655c8bf70d6481e936475fd2ce4f6f80",
+      "answer_sha256": "2abaca4911e68fa9bfbf3482ee797fd5b9045b841fdff7253557c5fe15de6477",
+      "ground_truth": "120"
+    },
+    {
+      "problem_id": "math500-test-285",
+      "source_index": 285,
+      "unique_id": "test/intermediate_algebra/1411.json",
+      "subject": "Intermediate Algebra",
+      "level": 4,
+      "question_sha256": "d03a1b8fc03cf76a4f4ec3147a0a64c4adb66c431a993cb3ca0b4515d9fdec7b",
+      "answer_sha256": "e3f6959781c353c201d378e02d9da532601673e08a1706fa15a5ebbd9ea1bd36",
+      "ground_truth": "440"
+    },
+    {
+      "problem_id": "math500-test-002",
+      "source_index": 2,
+      "unique_id": "test/algebra/2584.json",
+      "subject": "Algebra",
+      "level": 3,
+      "question_sha256": "dd48d65e326606be4a9cc720b0f88c453bcbb8ebe2375d08f2095e9e237d3559",
+      "answer_sha256": "3949f443eb3e79201711bb806d42b0ded19c98a46f6b5935b30f40cc8b26d501",
+      "ground_truth": "14/3"
+    },
+    {
+      "problem_id": "math500-test-351",
+      "source_index": 351,
+      "unique_id": "test/precalculus/826.json",
+      "subject": "Precalculus",
+      "level": 3,
+      "question_sha256": "f3ddcce4187d85284b5fd64ee462d3d2023dc2dd514e6c5a569e065c01894056",
+      "answer_sha256": "998b16e8ced76833cf5e68e6e7327d941b94e540e209e2cdb1fc27536e743966",
+      "ground_truth": "1/16"
+    },
+    {
+      "problem_id": "math500-test-302",
+      "source_index": 302,
+      "unique_id": "test/prealgebra/465.json",
+      "subject": "Prealgebra",
+      "level": 4,
+      "question_sha256": "17fef4bd61055e5d208751032e8520df73665874b37f9cb1f61158a37f2e943a",
+      "answer_sha256": "ef2d127de37b942baad06145e54b0c619a1f22327b2ebbcfbec78f5564afe39d",
+      "ground_truth": "5"
+    },
+    {
+      "problem_id": "math500-test-209",
+      "source_index": 209,
+      "unique_id": "test/number_theory/234.json",
+      "subject": "Number Theory",
+      "level": 2,
+      "question_sha256": "f3a7efe83de361654e5b9d8fed2795dc4418571503130fef037682e2a26bb071",
+      "answer_sha256": "b17ef6d19c7a5b1ee83b907c595526dcb1eb06db8227d650d5dda0a9f4ce8cd9",
+      "ground_truth": "16"
+    },
+    {
+      "problem_id": "math500-test-341",
+      "source_index": 341,
+      "unique_id": "test/algebra/858.json",
+      "subject": "Algebra",
+      "level": 4,
+      "question_sha256": "0410748c1e76e3d42db6965c8dc90de8deefc6453e280bf7d1016659bbaa0c8c",
+      "answer_sha256": "cf3bae39dd692048a8bf961182e6a34dfd323eeb0748e162eaf055107f1cb873",
+      "ground_truth": "-2"
+    },
+    {
+      "problem_id": "math500-test-137",
+      "source_index": 137,
+      "unique_id": "test/number_theory/1257.json",
+      "subject": "Number Theory",
+      "level": 4,
+      "question_sha256": "28551dccd09ca15d905d4763731c20f08027ccb74f368dd485ccd40b08ec7641",
+      "answer_sha256": "eeeb4ca9cf64083648da2de022e9676f8f278601220f5dc07f0c851b5efa0761",
+      "ground_truth": "2045"
+    },
+    {
+      "problem_id": "math500-test-173",
+      "source_index": 173,
+      "unique_id": "test/algebra/686.json",
+      "subject": "Algebra",
+      "level": 5,
+      "question_sha256": "86429feba2dedf48c00f61e50ce8ca2b363200be9899a459f15d92a4777219ed",
+      "answer_sha256": "4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a",
+      "ground_truth": "4"
+    }
+  ]
+}

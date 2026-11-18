@@ -1,6 +1,6 @@
 import pytest
 
-from models.base import GenerationResult
+from adaptive_compute.models.base import GenerationResult
 
 
 def test_generation_result_computes_total_tokens() -> None:
@@ -24,4 +24,3 @@ def test_generation_result_rejects_negative_counts() -> None:
             latency_ms=0.0,
             finish_reason=None,
         )
-

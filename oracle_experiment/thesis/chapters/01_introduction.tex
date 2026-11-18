@@ -1,0 +1,169 @@
+\chapter{Giới thiệu}
+\label{chap:introduction}
+
+\section{Bối cảnh và động lực}
+
+Mô hình ngôn ngữ định hướng suy luận thường cải thiện kết quả khi được cấp thêm
+tài nguyên ở thời điểm suy luận. Hai cơ chế phổ biến là tăng giới hạn token cho
+một quỹ đạo sinh và lấy nhiều mẫu độc lập rồi tổng hợp đáp án. Chain-of-thought
+giúp mô hình biểu diễn các bước trung gian~\cite{wei2022cot}; self-consistency
+tăng độ tin cậy bằng cách tổng hợp nhiều quỹ đạo~\cite{wang2023selfconsistency};
+và các nghiên cứu về repeated sampling cho thấy xác suất tìm được lời giải đúng
+có thể tăng khi số mẫu tăng~\cite{brown2024monkeys}. Những kết quả này tạo cơ
+sở cho test-time scaling nhưng chưa trả lời trực tiếp cách phân bổ compute theo
+từng bài trong điều kiện phần cứng giới hạn.
+
+Một cấu hình duy nhất cho mọi đầu vào có hai nhược điểm. Thứ nhất, bài dễ có thể
+được giải đúng từ mẫu đầu tiên nhưng vẫn phải trả chi phí cho các mẫu sau. Thứ
+hai, nhiều quỹ đạo ngắn không thể bù cho một giới hạn token quá thấp nếu mọi
+quỹ đạo đều bị cắt trước khi mô hình xuất đáp án. Vấn đề vì vậy không chỉ là
+``dùng nhiều compute hơn'', mà là chọn hình thức compute phù hợp với trạng thái
+quan sát được của từng bài.
+
+Bài toán đặc biệt quan trọng với mô hình cỡ nhỏ chạy cục bộ. Mô hình nhỏ phù hợp
+với GPU phổ thông nhưng có biên độ sai số lớn hơn, còn việc tăng đồng thời số
+mẫu và giới hạn token nhanh chóng làm tăng thời gian chạy. Khóa luận tập trung
+vào Qwen3-0.6B trên một GPU RTX 4060, qua đó đặt bài toán trong điều kiện có thể
+tái lập ở quy mô khóa luận đại học thay vì giả định hạ tầng suy luận lớn.
+
+\section{Phát biểu bài toán}
+
+Với bài toán $x_i$ có đáp án chuẩn $y_i$, một cấu hình suy luận được ký hiệu
+\begin{equation}
+  p=(k,L),
+\end{equation}
+trong đó $k$ là số quỹ đạo sinh độc lập và $L$ là giới hạn
+\code{max\_new\_tokens} của mỗi quỹ đạo. Khóa luận gọi $k$ là \emph{breadth}.
+Từ \emph{depth} chỉ được dùng như cách viết tắt cho giới hạn token $L$, không
+được diễn giải là độ sâu ngữ nghĩa của quá trình suy luận.
+
+Ngân sách danh nghĩa của cấu hình là $kL$, nhưng chi phí thực tế được đo bằng
+\begin{equation}
+  C_i(p)=\sum_{j=1}^{k} t_{ij}(L), \qquad t_{ij}(L)\leq L,
+\end{equation}
+với $t_{ij}$ là số token thật sự đã sinh. Phân biệt này cần thiết vì mô hình có
+thể kết thúc sớm hoặc chạm giới hạn ở từng quỹ đạo. Mọi mẫu mà chính sách đã yêu
+cầu đều được tính chi phí, kể cả khi mẫu đó không quyết định đáp án cuối.
+
+Khóa luận xem xét liệu một chính sách nhẹ, không dùng verifier ngoài và không
+truy cập hidden state, có thể quyết định tăng $L$, lấy thêm mẫu, hoặc dừng dựa
+trên thông tin đã thanh toán hay không. Chính sách không được dùng đáp án chuẩn,
+nhãn oracle, mẫu tương lai hoặc kết quả phản thực tế tại thời điểm ra quyết
+định.
+
+\section{Câu hỏi nghiên cứu}
+
+Câu hỏi nghiên cứu đã chốt của đề tài là:
+
+\begin{quote}
+Đối với mô hình suy luận mã nguồn mở cỡ nhỏ, liệu một chính sách tuần tự nhẹ,
+không sử dụng verifier, có khả năng phân bổ giới hạn token sinh và chọn lọc bổ
+sung các mẫu độc lập, có thể cải thiện biên Pareto giữa độ chính xác trên tập
+giữ lại và số token sinh thực tế so với các cấu hình cố định cùng baseline
+thích ứng chỉ theo depth hoặc breadth hay không?
+\end{quote}
+
+Câu hỏi này tương ứng với phát biểu tiếng Anh được dùng trong paper:
+
+\begin{otherlanguage}{english}
+\begin{quote}
+For small open-weight reasoning models, can a verifier-free lightweight
+sequential policy that allocates generation-token caps and selectively adds
+independent samples improve the held-out accuracy--actual-generated-token
+Pareto frontier over fixed profiles and depth-only or breadth-only adaptive
+baselines?
+\end{quote}
+\end{otherlanguage}
+
+Hai câu hỏi hỗ trợ được dùng để diễn giải kết quả: (1) khi nào selective
+breadth mang lại giá trị ngoài adaptive token cap; và (2) quyết định phân bổ có
+ổn định giữa các tập bài suy luận hay không. Đánh giá trên một họ mô hình thứ
+hai vẫn là hướng mở và không được xem là phần bằng chứng đã hoàn tất.
+
+\section{Mục tiêu nghiên cứu}
+
+\subsection{Mục tiêu tổng quát}
+
+Mục tiêu tổng quát là xây dựng và đánh giá một quy trình phân bổ test-time
+compute có thể tái lập cho mô hình suy luận cỡ nhỏ, trong đó độ chính xác được
+đánh đổi với chi phí token thực tế và quyết định thích ứng không sử dụng tín
+hiệu bị rò rỉ từ đáp án chuẩn hoặc dữ liệu Test.
+
+\subsection{Mục tiêu cụ thể}
+
+\begin{enumerate}
+  \item Xây dựng pipeline sinh, lưu cache, tiếp tục sau gián đoạn, parse đáp án,
+  tổng hợp và phát lại chính sách trên cùng kho mẫu.
+  \item Định lượng ảnh hưởng riêng và kết hợp của $k$ và $L$ trên GSM8K và
+  MATH-500 bằng cấu hình, split và policy được đóng băng.
+  \item So sánh chính sách cố định, depth-only, breadth-only và heuristic kết
+  hợp theo độ chính xác và số token thực tế.
+  \item Báo cáo độ bất định và so sánh ghép cặp, đồng thời tách kết quả Test mô
+  tả khỏi quá trình chọn chính sách trên Validation.
+  \item Xác định giới hạn của kết luận trong điều kiện một seed, một họ mô hình
+  chính và phần cứng cục bộ.
+\end{enumerate}
+
+\section{Phạm vi và các quyết định phương pháp}
+
+Mô hình chính được chốt là Qwen3-0.6B. Hai tập dữ liệu chính là GSM8K và
+MATH-500, mỗi tập có 100 bài Test giữ lại, tách rời Train và Validation. GSM8K
+dùng $L\in\{512,1024,2048\}$; MATH-500 dùng
+$L\in\{1024,2048,4096\}$; cả hai dùng $k\in\{1,2,4\}$. Sinh mẫu sử dụng
+thinking mode, temperature 0,7, top-$p$ 0,95 và seed 42. Phân tích lịch sử
+Qwen3-1.7B/GSM8K được giữ thành một tầng bằng chứng riêng, không gộp với kết quả
+0.6B.
+
+Khóa luận không đặt mục tiêu huấn luyện lại mô hình nền, xây dựng verifier, hoặc
+tuyên bố một controller học máy hoàn chỉnh. Dữ liệu Train không có đủ sự kiện
+escalation dương để huấn luyện đáng tin cậy một joint controller. Vì vậy chính
+sách kết hợp được đánh giá là heuristic tất định đã đóng băng. Qwen3-1.7B trên
+MATH-500 và lưới $L=8192$ không thuộc điều kiện hoàn thành vì không phù hợp với
+ngân sách thời gian và bộ nhớ GPU hiện có.
+
+\section{Đóng góp đã hoàn thành}
+
+Các đóng góp được giới hạn ở những thành phần đã có artifact kiểm chứng:
+
+\begin{enumerate}
+  \item Pipeline đánh giá breadth--token-cap có manifest, seed tất định, cache
+  append-only, tiếp tục sau gián đoạn, parser nghiêm ngặt, cost accounting theo
+  token thực tế và phát lại policy.
+  \item Đánh giá giữ lại của 14 chính sách đã đăng ký trên Test-100 của GSM8K
+  và MATH-500, không chọn lại chính sách dựa trên Test.
+  \item Bằng chứng rằng dừng theo mức đồng thuận có thể giữ nguyên độ chính xác
+  so với fixed high-breadth trong khi giảm 21,3\% token trên GSM8K và xấp xỉ
+  20\% token trên MATH-500.
+  \item Kết quả âm có giá trị: heuristic kết hợp không tạo cải thiện Pareto ổn
+  định giữa hai tập dữ liệu và thất bại rõ rệt trên MATH-500.
+\end{enumerate}
+
+Non-thinking mode, native thinking budget, budget forcing, seed bổ sung và
+controller học máy là phương pháp hoặc đánh giá tương lai. Chúng không được
+liệt kê như đóng góp đã hoàn thành nếu chưa có kết quả được kiểm tra.
+
+\section{Tổng quan phương pháp nghiên cứu}
+
+Quy trình nghiên cứu gồm bốn giai đoạn. Giai đoạn đầu khảo sát lịch sử với
+Qwen3-1.7B trên GSM8K để hình thành giả thuyết ``đảm bảo token cap trước, bổ sung
+breadth có chọn lọc''. Giai đoạn hai chuyển sang Qwen3-0.6B, chuẩn hóa parser,
+manifest và action space phù hợp với RTX 4060. Giai đoạn ba dùng Train và
+Validation để xây dựng dữ liệu tuần tự, xác định policy, kiểm tra leakage và
+đóng băng điểm vận hành. Giai đoạn bốn sinh đúng một lần trên hai tập Test-100,
+phát lại toàn bộ policy và thực hiện phân tích ghép cặp.
+
+Cách tổ chức này phân biệt ba loại phát biểu. \emph{Bằng chứng hoàn thành} phải
+có raw artifact, manifest và phép phân tích tái lập. \emph{Giả thuyết làm việc}
+dùng để giải thích hoặc đề xuất thí nghiệm nhưng không được viết như kết luận.
+\emph{Đánh giá tương lai} là phần chưa chạy và chỉ xuất hiện trong giới hạn hoặc
+hướng phát triển.
+
+\section{Cấu trúc khóa luận}
+
+Sau chương giới thiệu, Chương 2 trình bày nền tảng và công trình liên quan.
+Chương 3 định nghĩa bài toán, chính sách và phương pháp thống kê. Chương 4 mô tả
+kiến trúc phần mềm cùng cơ chế tái lập. Chương 5 trình bày thiết kế thực nghiệm
+đã đóng băng. Chương 6 báo cáo kết quả GSM8K và MATH-500. Chương 7 thảo luận ý
+nghĩa, đe dọa độ giá trị và giới hạn. Chương 8 trả lời câu hỏi nghiên cứu và nêu
+hướng phát triển. Phụ lục lưu cấu hình, lệnh chạy, bảng đầy đủ và danh mục
+artifact hỗ trợ kiểm chứng.

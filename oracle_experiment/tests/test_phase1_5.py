@@ -1,4 +1,4 @@
-from analysis.phase1_5 import (
+from adaptive_compute.analysis.phase1_5 import (
     build_bootstrap_uncertainty,
     build_cost_accounting,
     build_depth_before_breadth,

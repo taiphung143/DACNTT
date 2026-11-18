@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "artifact_type": "generated_thesis_results",
+  "policy_counts": {
+    "gsm8k": 14,
+    "math500": 14
+  },
+  "raw_generation_counts": {
+    "gsm8k": 1200,
+    "math500": 1200
+  },
+  "selected_policy_ids": {
+    "gsm8k": "breadth_only_agreement_L1024_v1",
+    "math500": "fixed_k2_L4096"
+  },
+  "source_hashes": {
+    "results\\phase2\\qwen3_0_6b_gsm8k_test_n100_policy_replay_v3\\policy_summary.csv": "9ae6954d209c05571132a46bf5396c600e5e50c2fd5d1213f4095d15f8442c92",
+    "results\\phase2\\qwen3_0_6b_gsm8k_test_n100_policy_replay_v3\\policy_pareto.csv": "701f966a912c91e7622de1375762544466e5181651ebc09eda346152911d5303",
+    "results\\phase2\\qwen3_0_6b_gsm8k_test_n100_policy_replay_v3\\primary_heuristic_comparisons.csv": "0b7895dd2d02d0ed627b280aef06038562b4c3b1320f7e6bc820b80c0be95b99",
+    "results\\phase2\\gsm8k_policy_freeze_v1\\policy_freeze.json": "02dc05c1751bac5311fc2565a52dff645503e7f34ef4888e161ecde9ec306aff",
+    "results\\qwen3_0_6b_gsm8k_test_n100_contract_v3\\raw_samples.jsonl": "6f9cb01039115c810ea1665044c881f42060b4a27b4ceac2d52d6b52aff466f5",
+    "results\\qwen3_0_6b_gsm8k_test_n100_contract_v3\\experiment_manifest.json": "3c06401d38b84465e93e7b65b183a14726aac32de15114a3f523d205ad15c873",
+    "results\\phase2\\qwen3_0_6b_math500_test_n100_baseline_replay_v1\\policy_summary.csv": "20e7f1ab5638123235e804b03737bf1e0b4f2d86fe1b4febe2d4616d8339e901",
+    "results\\phase2\\qwen3_0_6b_math500_test_n100_baseline_replay_v1\\policy_pareto.csv": "ecf280c816f9ceaa983633c6e50789b53d836522d33d6e5bb2edbc735655d6c0",
+    "results\\phase2\\qwen3_0_6b_math500_test_n100_baseline_replay_v1\\primary_heuristic_comparisons.csv": "e7adc8416546b679c6581ed63cc3221c2b916d770f7e59a6107a75a081b8f6d6",
+    "results\\phase2\\math500_policy_freeze_v1\\policy_freeze.json": "79163f652a451af43380fab32a8f1ef3c4885c9f7fbebef014f5ecce595974b4",
+    "results\\qwen3_0_6b_math500_test_n100_contract_v1\\raw_samples.jsonl": "b2d084d86266dfceae8b094f82c374197e5c89622f4c91a69626bcc196fc2095",
+    "results\\qwen3_0_6b_math500_test_n100_contract_v1\\experiment_manifest.json": "0eb48ce585e64c925ed6a763e62406c94e5b1c2f12629ee6bcc0f58758c1df71"
+  },
+  "output_hashes": {
+    "thesis/generated/05_experiment_completeness.tex": "7dc7bf20baf3b61d3dfbb0a0960aecee78086badd3fc70d543a1ab896a8da9b9",
+    "thesis/generated/06_main_results.tex": "6d0adeb452ae2ed67ce9ad2464ed5dfdd4d2893672b947c1146ef77aec3575d1",
+    "thesis/generated/06_gsm8k_all_policies.tex": "4b49cedec1da3669a430c7c37ea83000906bc7179beac430a4d42589b372df97",
+    "thesis/generated/06_math500_all_policies.tex": "ce582daac17c6fdd500033a696b221727bcf07c8740bbd3e8ef5905ca2de33fc",
+    "thesis/generated/06_paired_comparisons.tex": "f8ee9bfc88cd66ae8469bb3ccc81475ebc2149be929d75c04b2d9725bc176f60"
+  },
+  "interpretation": "Tables are generated from frozen artifacts. Test Pareto membership is descriptive and does not authorize policy reselection."
+}

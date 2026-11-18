@@ -1,11 +1,11 @@
 import json
 from pathlib import Path
 
-from analyze_grid import run_analysis
-from config import ExperimentConfig
-from dataset import GSM8KProblem
-from experiment_runner import run_shared_sample_pool
-from models.base import GenerationResult, ModelAdapter
+from adaptive_compute.cli.analyze_grid import run_analysis
+from adaptive_compute.config import ExperimentConfig
+from adaptive_compute.dataset import GSM8KProblem
+from adaptive_compute.experiment_runner import run_shared_sample_pool
+from adaptive_compute.models.base import GenerationResult, ModelAdapter
 
 
 class SanityAdapter(ModelAdapter):

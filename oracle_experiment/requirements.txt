@@ -6,6 +6,11 @@ accelerate==1.14.0
 
 # Analysis and plotting
 matplotlib==3.11.1
+scipy==1.17.1
+joblib==1.6.0
+
+# Lightweight Phase 2 controller
+scikit-learn==1.6.1
 
 # Tests
 pytest==8.4.2

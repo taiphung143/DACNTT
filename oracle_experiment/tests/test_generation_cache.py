@@ -2,11 +2,15 @@ from pathlib import Path
 
 import pytest
 
-from config import ExperimentConfig
-from dataset import GSM8KProblem
-from experiment_runner import run_shared_sample_pool
-from generation_cache import CACHE_IDENTITY_FIELDS, generation_cache_key, load_generation_cache
-from models.base import GenerationResult, ModelAdapter
+from adaptive_compute.config import ExperimentConfig
+from adaptive_compute.dataset import GSM8KProblem
+from adaptive_compute.experiment_runner import run_shared_sample_pool
+from adaptive_compute.generation_cache import (
+    CACHE_IDENTITY_FIELDS,
+    generation_cache_key,
+    load_generation_cache,
+)
+from adaptive_compute.models.base import GenerationResult, ModelAdapter
 
 
 class CountingAdapter(ModelAdapter):

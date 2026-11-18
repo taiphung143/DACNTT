@@ -1,0 +1,34 @@
+\chapter{Trạng thái tái lập}
+\label{app:reproducibility}
+
+Phụ lục này ghi trạng thái môi trường tại thời điểm khởi tạo bản khóa luận. Môi
+trường \code{oracle\_slm} sử dụng Python 3.11.15, PyTorch 2.9.1 với CUDA 12.8,
+Transformers 5.15.1, Datasets 4.8.5, Accelerate 1.14.0, Matplotlib 3.11.1,
+scikit-learn 1.6.1, SciPy 1.17.1, joblib 1.6.0 và pytest 8.4.2. PyTorch nhận GPU
+NVIDIA GeForce RTX 4060 Laptop GPU. Lệnh \code{python -m pip check} không phát
+hiện dependency hỏng.
+
+Toàn bộ test được chạy bằng:
+
+\begin{verbatim}
+$env:PYTEST_DISABLE_PLUGIN_AUTOLOAD='1'
+D:\miniconda\envs\oracle_slm\python.exe -m pytest -q
+\end{verbatim}
+
+Kết quả kiểm tra ngày 16/11/2026 là 180 test đạt, một cảnh báo deprecation từ
+SciPy và không có test thất bại. Cảnh báo không làm thay đổi output quan sát
+được của baseline.
+
+Hai split đóng băng, raw generation của Test-100, replay manifest, policy
+summary, paired comparison, figure manifest, source paper và PDF đã được ghi
+SHA-256 trong \path{docs/primary_artifact_inventory_2026-11-16.md}. Danh
+mục này là điểm tham chiếu để phát hiện việc thay thế nhầm artifact trong quá
+trình hoàn thiện khóa luận.
+
+\section{Nguyên tắc tái lập kết quả}
+
+Các bảng và hình chính phải được tạo từ CSV/JSON đã đóng băng thay vì nhập tay.
+Tập Test chỉ được dùng để báo cáo một lần theo policy đã đăng ký. Pareto trên
+Test mang tính mô tả và không cho phép chọn lại policy. Nếu bổ sung decoding
+control sau thời điểm đóng băng, kết quả phải được ghi rõ là robustness hoặc
+post-hoc exploratory tùy theo thiết kế và không được thay đổi đánh giá chính.

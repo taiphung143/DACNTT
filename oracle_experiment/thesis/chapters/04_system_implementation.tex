@@ -1,0 +1,181 @@
+\chapter{Thiết kế và triển khai hệ thống}
+\label{chap:implementation}
+
+\section{Mục tiêu triển khai}
+
+Hệ thống được xây dựng để đáp ứng bốn yêu cầu: sinh mẫu có thể tiếp tục sau gián đoạn,
+đo chi phí nhất quán, phát lại nhiều policy trên cùng dữ liệu và lưu đủ provenance để
+kiểm tra claim. Mã nguồn Python được tổ chức thành package \code{adaptive\_compute},
+tách logic sinh GPU khỏi phân tích CPU. Cách tách này cho phép sửa phân tích hoặc thêm
+bảng thống kê mà không phải chạy lại mô hình, miễn là quy tắc parse và generation
+identity không thay đổi.
+
+\begin{figure}[htbp]
+  \centering
+  \fbox{\begin{minipage}{0.91\textwidth}
+    \centering
+    \textbf{Frozen dataset manifest} $\rightarrow$
+    \textbf{Prompt + deterministic seed} $\rightarrow$
+    \textbf{Qwen3 generation}\\[0.35cm]
+    $\downarrow$ append-only checkpoint và generation cache\\[0.35cm]
+    \textbf{Strict parser} $\rightarrow$
+    \textbf{Valid-only aggregation} $\rightarrow$
+    \textbf{Fixed/adaptive policy replay}\\[0.35cm]
+    $\downarrow$\\[-0.1cm]
+    \textbf{Cost accounting + statistical reports + figures}
+  \end{minipage}}
+  \caption{Luồng dữ liệu chính của hệ thống thực nghiệm.}
+  \label{fig:system-pipeline}
+\end{figure}
+
+\section{Tổ chức mã nguồn}
+
+Các module được phân trách nhiệm như sau:
+
+\begin{itemize}
+  \item \code{config.py}, dataset adapters và split modules định nghĩa cấu hình, tải
+  dữ liệu và xác minh manifest;
+  \item \code{prompts.py}, module adapter Transformers và
+  \code{experiment\_runner.py} xây prompt, sinh mẫu và ghi provenance;
+  \item \code{answer\_parser.py}, \code{evaluate.py} và \code{aggregation.py} parse,
+  chuẩn hóa, chấm đúng/sai và tổng hợp cấu hình;
+  \item \code{generation\_cache.py} cùng checkpoint JSONL hỗ trợ tái sử dụng và
+  tiếp tục sau gián đoạn;
+  \item \code{controller/} xây dữ liệu tuần tự, kiểm tra training gate, đóng băng và
+  phát lại policy;
+  \item \code{analysis/} tạo oracle, khoảng tin cậy, kiểm định ghép cặp, bảng Pareto
+  và biểu đồ;
+  \item \code{tests/} kiểm tra unit và integration bằng fake adapter, không yêu cầu
+  CUDA.
+\end{itemize}
+
+Command-line interface là lớp mỏng gọi các module trên. Thực nghiệm GPU và phân tích
+CPU có lệnh riêng, nhờ đó người dùng có thể kiểm tra artifact trước khi chuyển giai
+đoạn.
+
+\section{Adapter mô hình và phép đo}
+
+\code{TransformersModelAdapter} tải tokenizer và causal language model theo model ID
+cùng revision đã chốt. Mặc định thiết bị là CUDA và kiểu dữ liệu là bfloat16. Adapter
+từ chối tự động rơi về CPU nếu người dùng không bật rõ \code{allow\_cpu}; cơ chế này
+tránh vô tình chạy một job nhiều giờ trên CPU.
+
+Prompt được đưa qua chat template của Qwen3 với thinking mode bật. Khi temperature
+lớn hơn 0, adapter bật sampling với top-$p$ đã cấu hình; seed được đặt cho PyTorch và
+CUDA trước mỗi lần sinh. Thời gian được đo sau khi đồng bộ CUDA ở hai đầu. Số prompt
+token lấy từ tensor input và số token sinh lấy từ phần output nằm sau prompt, không
+ước lượng từ chuỗi đã decode. Finish reason là \code{length} khi số token chạm cap,
+\code{stop} khi gặp EOS, hoặc trạng thái chuẩn hóa khác khi không xác định được.
+
+Cấu hình chính dùng Qwen3-0.6B, temperature 0,7, top-$p$ 0,95, thinking mode, CUDA và
+bfloat16. Revision mô hình đã resolve được lưu trong manifest để tránh model ID trỏ
+tới nội dung khác ở lần chạy sau.
+
+\section{Định danh thí nghiệm và manifest bất biến}
+
+Experiment ID được tạo từ model, dataset, số bài, global seed và hash của toàn bộ
+generation identity. Identity gồm model revision, dataset revision, danh sách problem
+ID, các giá trị $k,L$, số repetition, decoding settings, prompt template, parser và
+seed policy. Manifest còn lưu hash split, package versions, device, dtype và số lần
+sinh dự kiến.
+
+Khi chạy mới, manifest được tạo theo chế độ độc quyền. Khi resume, chương trình so
+sánh từng trường ảnh hưởng kết quả; chỉ một khác biệt về prompt hash, parser, seed,
+revision hoặc action space cũng làm resume thất bại. Manifest vì vậy không chỉ là log
+mô tả mà là rào chắn chống trộn hai thí nghiệm không tương thích.
+
+\section{Checkpoint và generation cache}
+
+Mỗi generation được append ngay vào \code{raw\_samples.jsonl}. Khóa checkpoint là
+
+\begin{equation}
+  (\text{experiment ID},\text{problem ID},L,\text{sample ID},
+  \text{repetition},\text{model revision},\text{prompt hash}).
+\end{equation}
+
+$k$ cố ý vắng mặt vì breadth được dẫn xuất từ tiền tố của shared pool. Khi resume,
+hệ thống lập chỉ mục bản ghi mới nhất cho mỗi khóa. Một dòng cuối bị ghi dở do tiến
+trình dừng đột ngột có thể được bỏ qua an toàn; lỗi JSON ở giữa file được xem là hỏng
+checkpoint và làm chương trình dừng. Bản ghi lỗi generation được giữ là outcome hoàn
+chỉnh trừ khi người dùng yêu cầu retry rõ ràng.
+
+Generation cache có identity chứa mọi setting ảnh hưởng nội dung sinh nhưng cũng loại
+$k$. Cache chỉ được dùng khi identity khớp; sau đó kết quả vẫn đi qua parser và cost
+accounting của experiment hiện tại. Cơ chế này đặc biệt quan trọng trên RTX 4060 vì
+một lần chạy có thể kéo dài và bị gián đoạn, nhưng không được đánh đổi bằng việc tái
+sử dụng mẫu sai cấu hình.
+
+\section{Parser, tổng hợp và artifact trung gian}
+
+Sau sinh, mỗi bản ghi lưu raw response, đáp án reasoning nếu có, final response answer,
+failure type, truncation stage, token, latency, seed và audit flag. Parser name được
+version hóa để thay đổi quy tắc parse không âm thầm làm thay đổi kết quả cũ.
+
+\code{aggregation.py} nhận đúng tiền tố $k$ mẫu, bỏ phiếu trên đáp án cuối hợp lệ và
+tạo một dòng cho mỗi bài/repetition/profile. Dòng này chứa dự đoán majority, agreement,
+valid fraction, correctness, số lần truncate/parse failure, ngân sách $kL$, token thật
+sự, tổng prompt token và latency. Bảng \code{config\_results.csv} là cầu nối giữa raw
+generation và mọi phân tích cấp policy.
+
+Các artifact chính và vai trò được tóm tắt ở Bảng~\ref{tab:artifacts}.
+
+\begin{center}
+\begin{minipage}{0.96\textwidth}
+  \captionof{table}{Artifact phục vụ tái lập và kiểm toán.}
+  \label{tab:artifacts}
+  \centering
+  \begin{tabular}{p{0.34\textwidth}p{0.56\textwidth}}
+    \toprule
+    Artifact & Nội dung \\
+    \midrule
+    \code{experiment\_manifest.json} & Cấu hình bất biến, hash, revision, seed,
+    problem ID và số generation dự kiến. \\
+    \code{raw\_samples.jsonl} & Một dòng trên mỗi mẫu với response, parse, lỗi,
+    token, latency và identity. \\
+    \code{config\_results.csv} & Một dòng trên mỗi bài và $(k,L)$ với accuracy,
+    agreement và chi phí. \\
+    \code{policy\_traces.csv} & Quyết định tuần tự, lý do dừng và các mẫu policy
+    thực sự đã mua. \\
+    \code{paired\_comparisons.csv} & McNemar, Holm và chênh lệch metric ghép cặp. \\
+    Báo cáo/đồ thị & Wilson interval, Pareto, diagnostics và trường hợp minh họa. \\
+    \bottomrule
+  \end{tabular}
+\end{minipage}
+\end{center}
+
+\section{Phát lại policy và kiểm tra tính tương đương}
+
+Policy replay đọc raw pool, yêu cầu repetition ID bằng 0 cho protocol hiện tại, từ
+chối generation error, duplicate key hoặc pool thiếu. Với mỗi bài và $L$, sample ID
+phải đúng dãy $0,1,2,3$ và question/ground truth phải nhất quán. Prompt-token count
+cũng phải giống nhau giữa các pool của một bài.
+
+Ngưỡng tertile được tính riêng từ Train. Tại mỗi quyết định, replay chỉ cung cấp cho
+policy tiền tố đã trả phí. Trace lưu policy ID, policy type, partition, $L$, breadth đã
+chọn, decision reason, prompt token và thresholds. Một kiểm tra endpoint xác nhận rằng
+replay profile cố định tái tạo chính xác kết quả tổng hợp trực tiếp; nếu không, phân
+tích bị dừng thay vì tiếp tục với bảng không nhất quán.
+
+\section{Kiểm thử và môi trường tái lập}
+
+Test suite hiện có 180 test và đã chạy thành công sau đợt refactor package. Các test
+bao phủ parser, aggregation, seed và checkpoint identity, nested sample pool, dataset
+manifest, statistical routines, controller data, policy freeze và policy replay. Fake
+model adapter được dùng cho integration test để kiểm tra toàn pipeline mà không tải
+mô hình hoặc yêu cầu GPU.
+
+Môi trường thực nghiệm đã được kiểm tra với Python 3.11.15, PyTorch 2.9.1+cu128, CUDA
+12.8 và NVIDIA GeForce RTX 4060. Dependency được khóa trong requirements và hướng dẫn
+tái lập ghi rõ lệnh kiểm tra môi trường, chạy test, sinh GPU, resume và phân tích CPU.
+Kết quả này chứng minh phần mềm hoạt động trong môi trường hiện tại; nó không thay thế
+việc báo cáo revision, manifest và raw artifact của từng experiment.
+
+\section{Giới hạn triển khai hiện tại}
+
+Hệ thống chưa triển khai native thinking-budget control, budget forcing hoặc
+non-thinking comparator. Learned joint controller không vượt training gate nên không
+được dùng cho claim chính. Latency chỉ có ý nghĩa trong cùng phần cứng và phiên chạy;
+actual tokens được ưu tiên làm cost có khả năng so sánh hơn. Cuối cùng, deterministic
+seed giúp tái lập pool nhưng một seed không đo được độ nhạy theo ngẫu nhiên. Các mục
+này được ghi nhận là giới hạn hoặc công việc tương lai, không phải chức năng đã hoàn
+thành.

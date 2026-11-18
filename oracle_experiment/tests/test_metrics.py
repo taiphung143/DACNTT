@@ -1,4 +1,4 @@
-from evaluate import (
+from adaptive_compute.evaluate import (
     answers_equal,
     compute_token_budget_utilization,
     evaluate_response,
