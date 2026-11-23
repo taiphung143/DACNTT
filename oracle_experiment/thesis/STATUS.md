@@ -1,12 +1,15 @@
 # Thesis authoring status
 
-Updated: 2026-11-18
+Updated: 2026-11-20
 
-The current 64-page TDTU-formatted complete draft was built successfully with
+The current 68-page TDTU-formatted complete draft was built successfully with
 Tectonic. The final log contains no overfull boxes, undefined references, or
-undefined citations. All 64 pages were rendered and visually inspected.
-Deliverable: `output/pdf/thesis_tdtu_formatted_2026-11-18.pdf` (SHA-256
-`05bc31ab0f481643e1188a9d051f166950b9fc2b22cbf76a75a266e89f2b9b0d`).
+undefined citations. All 68 pages were rendered and visually inspected.
+Deliverable: `output/pdf/thesis_tdtu_formatted_2026-11-20.pdf` (SHA-256
+`054573143966F98AAC34A4AF4ADEB6C25BD8DFE12E773C2BC6BD0BBA2E42B0FF`).
+The synchronized 18-page paper is
+`output/pdf/paper_forceanswer_2026-11-20.pdf` (SHA-256
+`7D59A5560CC55D5BE96AE3EB29214EABC635DC00F47D21805DB928A689EFC1FF`).
 
 ## Completed in the current draft
 
@@ -50,6 +53,47 @@ Deliverable: `output/pdf/thesis_tdtu_formatted_2026-11-18.pdf` (SHA-256
 - a Vietnamese 9:40 defense rehearsal script covering all 13 slides, 18 likely
   examiner questions with evidence-bounded answers, claim traps, and a
   pre-defense checklist in `slides/DEFENSE_REHEARSAL_AND_QA_VI.md`.
+- a Train-only pooled hierarchical-controller feasibility implementation with
+  problem-grouped OOF prediction, complete policy replay, leakage audit and a
+  versioned V5 artifact. Learned breadth passes the development gate; the
+  hybrid joint candidate remains conditional. This is development evidence
+  and has not been added to the frozen Test-100 claims.
+- a pre-Validation frozen, one-shot replay of the V5 learned-breadth candidate
+  on GSM8K Validation-20 and MATH-500 Validation-20. It reduced mean tokens by
+  42.27% and 26.61%, respectively, versus agreement-high, but lost 5 percentage
+  points on GSM8K and therefore failed the pre-declared cross-dataset gate.
+  Decision: `PIVOT_NO_RESERVE_FOR_THIS_CONTROLLER`; Test/reserve evaluation is
+  not authorized. See `docs/LEARNED_BREADTH_VALIDATION_RESULT_2026-11-18.md`.
+- a completed paired non-thinking control on both frozen Validation-20
+  partitions. It saves 78.03--96.83% of generated tokens but has lower accuracy
+  in all six high-L/k profiles; the GSM8K losses are significant after Holm
+  correction. This is supplementary development evidence and is not promoted
+  to Test-100. See `docs/NON_THINKING_VALIDATION_RESULT_2026-11-19.md`.
+- a versioned maximum-budget force-answer implementation with total-budget
+  accounting, answer-token reserve, intervention-aware cache identity, and
+  immutable manifest fields. Clean Train-3 GPU smokes passed on both datasets:
+  GSM8K had 11/12 parse-valid rows and MATH-500 had 12/12, with zero generation
+  errors, zero over-cap rows, and zero length-truncated rows. The subsequent
+  paired Validation-20 comparisons on both datasets reduced token cost and
+  sharply reduced parse/truncation failures. Observed accuracy gaps are
+  non-negative in all 12 profiles, including +15--25 percentage points for
+  MATH-500 at `L=1024`, but none is significant after Holm correction on 20
+  problems. The frozen decision is
+  `VALIDATION_PASS_CONFIRMATORY_PROTOCOL_REQUIRED`; this remains supplementary
+  evidence and does not authorize Test-100. See
+  `docs/BUDGET_FORCING_VALIDATION_RESULT_2026-11-20.md`.
+- a separately declared, post-Validation force-answer Test-100 robustness
+  evaluation at the constrained caps. Both 400-generation grids passed the
+  integrity audit. Compared with paired standard thinking, force-answer saves
+  16.1--16.4% tokens on GSM8K and 19.9--20.2% on MATH-500, sharply reduces
+  parse/truncation failures, and has positive accuracy gaps in all six
+  profiles. GSM8K `k=1` and all MATH-500 gains remain significant after Holm
+  correction. Frozen decision: `SUPPORTED_ACROSS_DATASETS`. This does not
+  change the primary policy-selection results and is disclosed as selected on
+  Validation. See `docs/BUDGET_FORCING_TEST_RESULT_2026-11-20.md`.
+- the repaired Miniconda environment passes all 203 automated tests (five
+  third-party deprecation warnings) under Python 3.11.15, and `pip check`
+  reports no broken requirements.
 
 ## Verified primary evidence
 
@@ -73,9 +117,18 @@ Deliverable: `output/pdf/thesis_tdtu_formatted_2026-11-18.pdf` (SHA-256
 - The oracle is defined as a one-seed, ground-truth-aware opportunity bound,
   not a deployable policy.
 - Validation selection is explicitly separated from frozen Test reporting.
-- Non-thinking mode, native Qwen3 thinking-budget control, budget forcing,
-  extra seeds, and a learned controller remain future evaluations rather than
-  completed evidence.
+- The learned-breadth threshold was frozen before the one-shot Validation
+  replay. The failed gate is retained without Validation-dependent retuning,
+  and no reserve/Test claim is made for this controller.
+- The pinned Qwen3-0.6B Hugging Face backend exposes thinking/non-thinking mode
+  but no native numeric thinking-budget interface. Maximum-budget force-answer
+  has passed Train smokes, both Validation-20 usefulness gates, and a separately
+  declared paired Test-100 robustness evaluation at constrained caps. Its
+  post-Validation selection history is retained explicitly; extra seeds remain
+  future evaluations.
+  Non-thinking mode is completed on Validation-20 only and remains outside the
+  primary Test claims. The learned controller has completed Train-OOF
+  feasibility and frozen Validation evidence, but no confirmatory Test evidence.
 
 ## Next completion batch
 
@@ -88,9 +141,17 @@ Deliverable: `output/pdf/thesis_tdtu_formatted_2026-11-18.pdf` (SHA-256
    `slides/DEFENSE_REHEARSAL_AND_QA_VI.md`; the evidence-bounded answers for
    freeze discipline, paired inference, the negative joint result, and missing
    decoding controls are now prepared.
-4. If GPU time remains, run the decoding controls or extra-seed robustness
-   checks as separately declared supplementary evaluations; do not overwrite
-   or retune the frozen Test-100 evidence.
+4. Review the integrated force-answer robustness section in the thesis and
+   paper with the advisor. Preserve the post-Validation selection disclosure
+   and leave the original primary policy-selection claims unchanged.
+5. After the decoding-control decision, use remaining GPU time for extra-seed
+   robustness checks as a separately declared supplementary evaluation; do not
+   overwrite or retune the frozen Test-100 evidence.
+6. Do not evaluate or retune the failed learned-breadth candidate on reserve or
+   Test. If controller research continues, declare a substantively new method
+   and evaluation protocol before training it; otherwise retain the negative
+   Validation result as feasibility evidence and prioritize the missing
+   decoding controls or extra-seed robustness checks.
 
 ## Defense deck
 

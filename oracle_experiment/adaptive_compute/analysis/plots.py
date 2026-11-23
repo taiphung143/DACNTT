@@ -42,7 +42,7 @@ def generate_plots(
     save_grid_heatmap(
         grid,
         value_key="final_accuracy",
-        title="Final accuracy on evaluated pilot items",
+        title="Historical Qwen3-1.7B GSM8K accuracy (n=99)",
         output=plots_dir / "accuracy_heatmap.png",
     )
     save_grid_heatmap(

@@ -158,7 +158,7 @@ tích bị dừng thay vì tiếp tục với bảng không nhất quán.
 
 \section{Kiểm thử và môi trường tái lập}
 
-Test suite hiện có 180 test và đã chạy thành công sau đợt refactor package. Các test
+Test suite hiện có 203 test và đã chạy thành công sau đợt refactor package. Các test
 bao phủ parser, aggregation, seed và checkpoint identity, nested sample pool, dataset
 manifest, statistical routines, controller data, policy freeze và policy replay. Fake
 model adapter được dùng cho integration test để kiểm tra toàn pipeline mà không tải
@@ -172,10 +172,15 @@ việc báo cáo revision, manifest và raw artifact của từng experiment.
 
 \section{Giới hạn triển khai hiện tại}
 
-Hệ thống chưa triển khai native thinking-budget control, budget forcing hoặc
-non-thinking comparator. Learned joint controller không vượt training gate nên không
-được dùng cho claim chính. Latency chỉ có ý nghĩa trong cùng phần cứng và phiên chạy;
+Hệ thống đã triển khai non-thinking comparator bằng
+\code{enable\_thinking=false}, với chế độ sinh được đưa vào manifest và cache identity.
+Hệ thống cũng đã triển khai \code{force\_answer\_v2}: pha đầu nhận $L-R$ token;
+nếu chạm giới hạn, pipeline đóng thinking block, thêm cue trả lời và dành tối đa
+$R$ token còn lại mà không vượt tổng cap $L$. Strategy, version, reserve, trạng thái
+forced transition và số control token chèn được lưu trong manifest/raw/cache identity.
+Backend cố định không cung cấp native numeric thinking-budget. Learned joint
+controller không vượt training gate nên không được dùng cho claim chính. Latency chỉ
+có ý nghĩa trong cùng phần cứng và phiên chạy;
 actual tokens được ưu tiên làm cost có khả năng so sánh hơn. Cuối cùng, deterministic
 seed giúp tái lập pool nhưng một seed không đo được độ nhạy theo ngẫu nhiên. Các mục
-này được ghi nhận là giới hạn hoặc công việc tương lai, không phải chức năng đã hoàn
-thành.
+Các giới hạn còn lại được ghi nhận thay vì trình bày như chức năng đã hoàn thành.

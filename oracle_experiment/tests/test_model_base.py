@@ -24,3 +24,12 @@ def test_generation_result_rejects_negative_counts() -> None:
             latency_ms=0.0,
             finish_reason=None,
         )
+    with pytest.raises(ValueError, match="injected_control_tokens"):
+        GenerationResult(
+            text="",
+            prompt_tokens=0,
+            generated_tokens=0,
+            latency_ms=0.0,
+            finish_reason=None,
+            injected_control_tokens=-1,
+        )

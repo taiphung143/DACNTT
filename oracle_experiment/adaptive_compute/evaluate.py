@@ -9,12 +9,14 @@ from adaptive_compute.answer_parser import (
     GSM8K_ANSWER_PARSER_NAMES,
     GSM8K_ANSWER_PARSER_V2_NAME,
     GSM8K_ANSWER_PARSER_V3_NAME,
+    GSM8K_ANSWER_PARSER_V4_NAME,
     MATH500_ANSWER_PARSER_NAME,
     normalize_math_answer,
     normalize_numeric_answer,
     parse_math500_response_answers,
     parse_gsm8k_v2_response_answers,
     parse_gsm8k_v3_response_answers,
+    parse_gsm8k_v4_response_answers,
     parse_response_answers,
 )
 
@@ -116,6 +118,8 @@ def evaluate_response(
         answers = parse_gsm8k_v2_response_answers(raw_response)
     elif answer_parser_name == GSM8K_ANSWER_PARSER_V3_NAME:
         answers = parse_gsm8k_v3_response_answers(raw_response)
+    elif answer_parser_name == GSM8K_ANSWER_PARSER_V4_NAME:
+        answers = parse_gsm8k_v4_response_answers(raw_response)
     elif answer_parser_name == MATH500_ANSWER_PARSER_NAME:
         answers = parse_math500_response_answers(raw_response)
     else:

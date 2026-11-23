@@ -64,6 +64,9 @@ class ExperimentConfig:
     model_dtype: str = "bfloat16"
     use_chat_template: bool = True
     enable_thinking: bool = True
+    decoding_strategy: str = "standard"
+    decoding_strategy_version: str | None = None
+    answer_reserve_tokens: int = 0
     manual_audit_path: Path = field(default_factory=lambda: MANUAL_AUDIT_PATH)
     exclude_flagged_dataset_items_from_main_metrics: bool = (
         EXCLUDE_FLAGGED_DATASET_ITEMS_FROM_MAIN_METRICS
@@ -104,6 +107,31 @@ class ExperimentConfig:
             raise ValueError("top_p must be in (0, 1]")
         if self.request_timeout_seconds <= 0:
             raise ValueError("request_timeout_seconds must be positive")
+        if self.decoding_strategy not in {"standard", "force_answer"}:
+            raise ValueError("decoding_strategy must be 'standard' or 'force_answer'")
+        expected_strategy_version = (
+            "force_answer_v2"
+            if self.decoding_strategy == "force_answer"
+            else "standard_v1"
+        )
+        if self.decoding_strategy_version not in {None, expected_strategy_version}:
+            raise ValueError(
+                "decoding_strategy_version does not match the current implementation"
+            )
+        object.__setattr__(
+            self, "decoding_strategy_version", expected_strategy_version
+        )
+        if self.answer_reserve_tokens < 0:
+            raise ValueError("answer_reserve_tokens must be non-negative")
+        if self.decoding_strategy == "standard" and self.answer_reserve_tokens != 0:
+            raise ValueError("standard decoding requires answer_reserve_tokens=0")
+        if self.decoding_strategy == "force_answer":
+            if not self.enable_thinking:
+                raise ValueError("force_answer decoding requires enable_thinking=True")
+            if self.answer_reserve_tokens <= 0:
+                raise ValueError("force_answer decoding requires a positive answer reserve")
+            if self.answer_reserve_tokens >= min(self.l_values):
+                raise ValueError("answer reserve must be smaller than every L value")
 
         # Canonicalize sequences so callers cannot mutate configuration state.
         object.__setattr__(self, "k_values", tuple(self.k_values))

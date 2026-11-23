@@ -1,3 +1,5 @@
+from itertools import product
+
 import pytest
 
 from adaptive_compute.aggregation import aggregate_answers, build_configuration_summary
@@ -25,6 +27,21 @@ def test_all_invalid_samples_do_not_crash() -> None:
 
 def test_tie_breaking_uses_lowest_valid_sample_index() -> None:
     assert aggregate_answers(["40", "42"]).majority_answer == "40"
+
+
+def test_valid_only_vote_is_not_generally_monotone_across_token_caps() -> None:
+    short_cap = aggregate_answers([None, "A"])
+    long_cap = aggregate_answers(["B", "A"])
+
+    assert short_cap.majority_answer == "A"
+    assert long_cap.majority_answer == "B"
+
+
+def test_two_sample_agreement_prediction_matches_any_four_sample_extension() -> None:
+    for third, fourth in product((None, "A", "B"), repeat=2):
+        stopped = aggregate_answers(["A", "A"]).majority_answer
+        fixed_four = aggregate_answers(["A", "A", third, fourth]).majority_answer
+        assert stopped == fixed_four == "A"
 
 
 def test_main_aggregation_uses_final_not_reasoning_answers() -> None:

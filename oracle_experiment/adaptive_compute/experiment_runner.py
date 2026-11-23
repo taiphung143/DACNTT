@@ -130,6 +130,9 @@ def experiment_identity(config: ExperimentConfig, problem_ids: Sequence[str]) ->
         "temperature": config.temperature,
         "top_p": config.top_p,
         "enable_thinking": config.enable_thinking,
+        "decoding_strategy": config.decoding_strategy,
+        "decoding_strategy_version": config.decoding_strategy_version,
+        "answer_reserve_tokens": config.answer_reserve_tokens,
         "prompt_template_name": config.prompt_template_name,
         "prompt_hash": sha256_text(get_prompt_template(config.prompt_template_name)),
         "answer_parser_name": config.answer_parser_name,
@@ -220,6 +223,9 @@ def create_or_validate_manifest(
             "temperature",
             "top_p",
             "enable_thinking",
+            "decoding_strategy",
+            "decoding_strategy_version",
+            "answer_reserve_tokens",
             "prompt_template_name",
             "answer_parser_name",
             "device",
@@ -292,6 +298,9 @@ def run_shared_sample_pool(
                         "temperature": config.temperature,
                         "top_p": config.top_p,
                         "enable_thinking": config.enable_thinking,
+                        "decoding_strategy": config.decoding_strategy,
+                        "decoding_strategy_version": config.decoding_strategy_version,
+                        "answer_reserve_tokens": config.answer_reserve_tokens,
                     }
                     cached = generation_cache.get(generation_cache_key(cache_identity))
                     generation_error: str | None = None
@@ -303,6 +312,12 @@ def run_shared_sample_pool(
                             "generated_tokens": int(cached.get("generated_tokens", 0)),
                             "latency_ms": float(cached.get("latency_ms", 0.0)),
                             "finish_reason": cached.get("finish_reason", "stop"),
+                            "forced_transition": bool(
+                                cached.get("forced_transition", False)
+                            ),
+                            "injected_control_tokens": int(
+                                cached.get("injected_control_tokens", 0)
+                            ),
                         }
                         evaluation = evaluate_response(
                             str(generation_payload["text"]),
@@ -340,6 +355,8 @@ def run_shared_sample_pool(
                                 "generated_tokens": 0,
                                 "latency_ms": 0.0,
                                 "finish_reason": "error",
+                                "forced_transition": False,
+                                "injected_control_tokens": 0,
                             }
                             evaluation = evaluate_response(
                                 "",
@@ -371,6 +388,9 @@ def run_shared_sample_pool(
                         "temperature": config.temperature,
                         "top_p": config.top_p,
                         "enable_thinking": config.enable_thinking,
+                        "decoding_strategy": config.decoding_strategy,
+                        "decoding_strategy_version": config.decoding_strategy_version,
+                        "answer_reserve_tokens": config.answer_reserve_tokens,
                         "prompt_template_name": config.prompt_template_name,
                         "answer_parser_name": config.answer_parser_name,
                         "generation_cache_hit": cached is not None,

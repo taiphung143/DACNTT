@@ -99,6 +99,86 @@ trên Pareto GSM8K nhưng bị dominated rõ rệt trên MATH-500. Do đó đón
 nghiệm hiện tại là giao thức đánh giá và bằng chứng về breadth stopping, không
 phải một learned joint controller hoàn chỉnh.
 
+\section{Đối chứng non-thinking trên Validation}
+
+Sau khi hoàn tất đánh giá Test chính, nghiên cứu thực hiện một đối chứng bổ
+sung trên cùng 20 câu Validation của mỗi bộ dữ liệu. Hai chế độ dùng cùng
+model revision, problem ID, prompt, sampling setting và các giá trị $k$; chỉ
+thay đổi chế độ thinking. GSM8K dùng $L=2048$ và cùng parser V4 cho cả hai chế
+độ, còn MATH-500 dùng $L=4096$ và parser V2. Không có artifact Test-100 nào
+được mở để chọn hoặc đánh giá đối chứng này.
+
+\begin{table}[htbp]
+  \centering
+  \caption{So sánh ghép cặp thinking và non-thinking trên Validation-20. Token
+  là trung bình số token sinh thực tế trên mỗi câu.}
+  \label{tab:nonthinking-validation}
+  \scriptsize
+  \begin{tabular}{llrrr}
+    \toprule
+    Dữ liệu & $(k,L)$ & Thinking: đúng/token & Non-thinking: đúng/token & Tiết kiệm token \\
+    \midrule
+    GSM8K & $(1,2048)$ & 13/20; 986.15 & 1/20; 31.30 & 96.83\% \\
+    GSM8K & $(2,2048)$ & 14/20; 1\,969.70 & 1/20; 84.85 & 95.69\% \\
+    GSM8K & $(4,2048)$ & 15/20; 3\,593.85 & 1/20; 143.65 & 96.00\% \\
+    MATH-500 & $(1,4096)$ & 11/20; 2\,388.70 & 8/20; 471.90 & 80.24\% \\
+    MATH-500 & $(2,4096)$ & 13/20; 4\,700.50 & 8/20; 923.40 & 80.36\% \\
+    MATH-500 & $(4,4096)$ & 13/20; 8\,979.10 & 11/20; 1\,972.50 & 78.03\% \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Non-thinking giảm 78.03--96.83\% token nhưng có accuracy thấp hơn ở cả sáu
+điểm. Trên GSM8K, chênh lệch là $-60$ đến $-70$ điểm phần trăm và cả ba kiểm
+định McNemar vẫn có ý nghĩa sau hiệu chỉnh Holm
+($p_{\mathrm{Holm}}\leq0.0004883$). Trên MATH-500, chênh lệch là $-10$ đến
+$-25$ điểm; các kiểm định không có ý nghĩa tại $n=20$, điều này không chứng
+minh tương đương hoặc non-inferiority. Vì cấu hình non-thinking rẻ nhưng không
+giữ accuracy, nó không được đưa lên Test-100. Kết quả này là bằng chứng phát
+triển bổ sung và không thay đổi các kết luận Test chính ở trên.
+
+\section{Đối chứng maximum-budget force-answer}
+
+Đối chứng thứ hai kiểm tra trực tiếp artifact do hard cap: dành $R=128$ token
+trả lời trong tổng cap $L=512$ trên GSM8K và $R=256$ trong $L=1024$ trên
+MATH-500. Khi pha reasoning chạm $L-R$, pipeline đóng thinking block, thêm cue
+trả lời và tiếp tục nhưng không vượt $L$. Can thiệp được chốt sau kết quả
+Validation-20; protocol, suffix, reserve, seed và phân tích được đóng băng trước
+lần sinh Test của riêng đối chứng. Vì kết quả Test chính của standard thinking
+đã được biết, đây là robustness evaluation sau Validation chứ không phải xác
+nhận preregistered hoàn toàn mới.
+
+\begin{table}[htbp]
+  \centering
+  \caption{So sánh ghép cặp standard thinking và force-answer trên Test-100 tại
+  các hard cap. $\Delta$ là accuracy force trừ standard; tiết kiệm token tính
+  tương đối so với standard. Holm được áp dụng trên ba giá trị $k$ trong từng
+  bộ dữ liệu.}
+  \label{tab:force-answer-test}
+  \scriptsize
+  \begin{tabular}{llrrrrr}
+    \toprule
+    Dữ liệu & $(k,L)$ & Standard & Force & $\Delta$ & Giảm token & $p_{\mathrm{Holm}}$ \\
+    \midrule
+    GSM8K & $(1,512)$ & 42/100 & 52/100 & +10 điểm & 16.2\% & 0.0190 \\
+    GSM8K & $(2,512)$ & 47/100 & 54/100 & +7 điểm & 16.4\% & 0.1846 \\
+    GSM8K & $(4,512)$ & 53/100 & 56/100 & +3 điểm & 16.1\% & 0.5488 \\
+    MATH-500 & $(1,1024)$ & 13/100 & 42/100 & +29 điểm & 20.2\% & $7.45\times10^{-9}$ \\
+    MATH-500 & $(2,1024)$ & 15/100 & 43/100 & +28 điểm & 20.2\% & $7.45\times10^{-9}$ \\
+    MATH-500 & $(4,1024)$ & 17/100 & 49/100 & +32 điểm & 19.9\% & $1.40\times10^{-9}$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Trên GSM8K, parse failure cấp sample giảm từ 54.0--59.0\% xuống 9.0--10.5\%
+và truncation giảm từ 55.0--57.5\% xuống 1.0--1.5\%. Chênh lệch accuracy tại
+$k=1$ có ý nghĩa sau Holm; hai point estimate còn lại dương nhưng không có ý
+nghĩa, nên không được diễn giải như tương đương. Trên MATH-500, parse failure
+giảm từ 85.8--86.5\% xuống 1.0--1.5\%, truncation giảm xuống 6.0--7.2\%, và cả
+ba mức tăng accuracy 28--32 điểm đều có ý nghĩa sau Holm. Theo quy tắc đã chốt,
+quyết định là \code{SUPPORTED\_ACROSS\_DATASETS}. Kết luận được giới hạn ở các
+hard cap đã đăng ký và không cho phép thêm biến thể Test hoặc tuning tiếp.
+
 \section{Bảng kết quả đầy đủ}
 
 Bảng~\ref{tab:gsm8k-all-policies} và Bảng~\ref{tab:math500-all-policies} báo
@@ -126,4 +206,3 @@ bằng, song chưa chứng minh hành vi của một hệ thống sinh tuần t�
 thể tái lập hoàn toàn chi phí wall-clock. Ngoài ra, oracle ground-truth-aware
 chỉ là opportunity bound và không được dùng như baseline triển khai. Những
 giới hạn này được phân tích sâu hơn trong chương thảo luận tiếp theo.
-

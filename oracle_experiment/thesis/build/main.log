@@ -730,13 +730,13 @@ LaTeX Font Warning: Font shape `OT1/cmr/m/n' in size <6.5> not available
 
  [12
 
-] (main.lot)
+] (main.lot [13
+
+])
 \tf@lot=\write5
 \openout5 = `main.lot'.
 
- (frontmatter/abbreviations [13
-
-] [14
+ (frontmatter/abbreviations [14] [15
 
 ])
 (chapters/01_introduction
@@ -780,17 +780,17 @@ Underfull \hbox (badness 2753) in paragraph at lines 28--29
 [25
 
 ]
-Underfull \hbox (badness 10000) in paragraph at lines 59--60
+Underfull \hbox (badness 10000) in paragraph at lines 63--64
 []|\TU/times.ttf(1)/m/n/10.95 gsm8k_cot_v3 \TU/times.ttf(0)/m/n/10.95 /
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 60--61
+Underfull \hbox (badness 10000) in paragraph at lines 64--65
 []|\TU/times.ttf(1)/m/n/10.95 math500_cot_v1 \TU/times.ttf(0)/m/n/10.95 /
  []
 
 [26]
-Underfull \hbox (badness 1735) in paragraph at lines 86--95
+Underfull \hbox (badness 1735) in paragraph at lines 90--99
 []\TU/times.ttf(0)/m/n/13 Trên GSM8K Validation, policy được chọn là \TU/times.
 ttf(1)/m/n/13 breadth_only_agreement_
  []
@@ -808,19 +808,19 @@ File: ../paper/figures//cross_dataset_test_policy_pareto.pdf Graphic file (type
  pdf)
 <use ../paper/figures//cross_dataset_test_policy_pareto.pdf>
  [31] (generated/06_paired_comparisons)
-[32] (generated/06_gsm8k_all_policies) [33] (generated/06_math500_all_policies)
-) (chapters/07_discussion [34
+[32] [33] [34] (generated/06_gsm8k_all_policies) [35]
+(generated/06_math500_all_policies)) (chapters/07_discussion [36
 
 ]
 Chương 7.
-[35
+[37
 
-] [36] [37] [38]
-Underfull \hbox (badness 1975) in paragraph at lines 156--156
+] [38] [39] [40] [41]
+Underfull \hbox (badness 1975) in paragraph at lines 178--178
 []|\TU/times.ttf(0)/m/n/8 Token cap không đồng nghĩa semantic
  []
 
-[39]) (chapters/08_conclusion [40]
+[42]) (chapters/08_conclusion [43]
 Chương 8.
 
 Underfull \hbox (badness 1210) in paragraph at lines 33--33
@@ -837,13 +837,13 @@ Underfull \hbox (badness 10000) in paragraph at lines 41--42
 []|\TU/times.ttf(0)/m/n/10.95 Chưa có bằng
  []
 
-[41
+[44
 
-] [42]) [43] (appendices/reproducibility [44]
+] [45] [46]) (appendices/reproducibility [47]
 Phụ lục A.
-) [45
+) [48
 
-] (references [46] [47
+] (references [49] [50
 
 ]
 Underfull \hbox (badness 2809) in paragraph at lines 77--80
@@ -863,10 +863,10 @@ Underfull \hbox (badness 1990) in paragraph at lines 98--101
  of ACL, pp. 27200–27215 (2026).
  []
 
-) [48] (main.aux)
+) [51] (main.aux)
 
 LaTeX Font Warning: Size substitutions with differences
 (Font)              up to 1.0pt have occurred.
 
  )
-Output written on main.xdv (64 pages, 877980 bytes).
+Output written on main.xdv (68 pages, 963672 bytes).

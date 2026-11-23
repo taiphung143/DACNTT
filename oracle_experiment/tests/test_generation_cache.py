@@ -7,6 +7,7 @@ from adaptive_compute.dataset import GSM8KProblem
 from adaptive_compute.experiment_runner import run_shared_sample_pool
 from adaptive_compute.generation_cache import (
     CACHE_IDENTITY_FIELDS,
+    cacheable_generation_record,
     generation_cache_key,
     load_generation_cache,
 )
@@ -38,6 +39,9 @@ def _identity() -> dict:
         "temperature": 0.7,
         "top_p": 0.95,
         "enable_thinking": True,
+        "decoding_strategy": "standard",
+        "decoding_strategy_version": "standard_v1",
+        "answer_reserve_tokens": 0,
     }
 
 
@@ -55,6 +59,29 @@ def test_cache_identity_changes_when_generation_setting_changes(field: str) -> N
     else:
         changed[field] = value + "-different"
     assert generation_cache_key(changed) != generation_cache_key(baseline)
+
+
+def test_legacy_cache_identity_defaults_to_standard_decoding() -> None:
+    current = _identity()
+    legacy = dict(current)
+    legacy.pop("decoding_strategy")
+    legacy.pop("decoding_strategy_version")
+    legacy.pop("answer_reserve_tokens")
+
+    assert generation_cache_key(legacy) == generation_cache_key(current)
+
+
+def test_force_answer_cache_version_prevents_stale_suffix_reuse() -> None:
+    legacy = _identity()
+    legacy["decoding_strategy"] = "force_answer"
+    legacy["answer_reserve_tokens"] = 128
+    legacy.pop("decoding_strategy_version")
+    current = dict(legacy, decoding_strategy_version="force_answer_v2")
+
+    assert generation_cache_key(legacy) != generation_cache_key(current)
+    assert cacheable_generation_record(legacy)["decoding_strategy_version"] == (
+        "force_answer_v1"
+    )
 
 
 def test_global_cache_reuses_across_experiment_ids(tmp_path: Path) -> None:

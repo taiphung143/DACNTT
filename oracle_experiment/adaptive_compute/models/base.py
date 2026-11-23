@@ -15,6 +15,8 @@ class GenerationResult:
     generated_tokens: int
     latency_ms: float
     finish_reason: str | None
+    forced_transition: bool = False
+    injected_control_tokens: int = 0
 
     def __post_init__(self) -> None:
         if self.prompt_tokens < 0:
@@ -23,6 +25,8 @@ class GenerationResult:
             raise ValueError("generated_tokens must be non-negative")
         if self.latency_ms < 0:
             raise ValueError("latency_ms must be non-negative")
+        if self.injected_control_tokens < 0:
+            raise ValueError("injected_control_tokens must be non-negative")
 
     @property
     def total_tokens(self) -> int:
@@ -43,4 +47,3 @@ class ModelAdapter(ABC):
         """Generate one independent sample and return normalized measurements."""
 
         raise NotImplementedError
-

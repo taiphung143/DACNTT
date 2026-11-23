@@ -26,9 +26,14 @@ $k=4,L=4096$ nhưng giảm xấp xỉ 20\% token.
 Kết quả không ủng hộ một quy tắc kết hợp chung cho cả hai tập dữ liệu. Bằng
 chứng hiện có cho thấy chính sách cố định theo tập dữ liệu hoặc thích ứng trên
 một trục có thể tạo điểm vận hành tốt hơn. Kết luận được giới hạn ở một seed,
-một họ mô hình chính và hai tập Test-100; các đối chứng non-thinking, điều
-khiển ngân sách suy luận gốc của Qwen3 và budget forcing được xem là đánh giá
-bổ sung, chưa phải bằng chứng đã hoàn thành.
+một họ mô hình chính và hai tập Test-100. Đối chứng non-thinking trên
+Validation giảm 78,0--96,8\% token nhưng giảm accuracy ở cả sáu cấu hình; điều
+khiển ngân sách suy luận dạng số gốc của backend Qwen3 vẫn chưa khả dụng. Một
+đối chứng force-answer riêng, được chọn sau Validation và đóng băng trước lần
+sinh Test của chính nó, giảm 16,1--20,2\% token tại các hard cap, giảm mạnh
+parse failure/cắt cụt và tăng accuracy quan sát 3--10 điểm trên GSM8K và
+28--32 điểm trên MATH-500. Kết quả bổ sung này không thay đổi so sánh policy
+chính và được diễn giải cùng lịch sử lựa chọn sau Validation.
 
 \noindent\textbf{Từ khóa:} test-time compute thích ứng; mô hình suy luận cỡ nhỏ;
 phân bổ breadth--token-cap; suy luận hiệu quả; Qwen3.

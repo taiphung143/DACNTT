@@ -1,0 +1,17 @@
+\babel@toc {vietnamese}{}\relax 
+\babel@toc {english}{}\relax 
+\babel@toc {vietnamese}{}\relax 
+\addvspace {10\p@ }
+\babel@toc {english}{}\relax 
+\babel@toc {vietnamese}{}\relax 
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {4.1}{\ignorespaces Luồng dữ liệu chính của hệ thống thực nghiệm.\relax }}{19}{figure.caption.11}%
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {6.1}{\ignorespaces Heatmap accuracy của thực nghiệm lịch sử Qwen3-1.7B trên 99 câu GSM8K dùng được. Tiêu đề ``pilot items'' trong hình phản ánh đúng vai trò thăm dò của artifact gốc.\relax }}{30}{figure.caption.15}%
+\contentsline {figure}{\numberline {6.2}{\ignorespaces Accuracy và chi phí token của 14 policy đã đăng ký trên GSM8K và MATH-500 Test. Policy selected được quyết định trên Validation.\relax }}{31}{figure.caption.17}%
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }

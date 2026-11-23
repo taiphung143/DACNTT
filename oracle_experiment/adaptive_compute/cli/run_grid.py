@@ -12,6 +12,7 @@ from adaptive_compute.answer_parser import (
     GSM8K_ANSWER_PARSER_NAME,
     GSM8K_ANSWER_PARSER_V2_NAME,
     GSM8K_ANSWER_PARSER_V3_NAME,
+    GSM8K_ANSWER_PARSER_V4_NAME,
     MATH500_ANSWER_PARSER_NAME,
 )
 from adaptive_compute.config import (
@@ -54,8 +55,10 @@ from adaptive_compute.prompts import (
     GSM8K_PROMPT_TEMPLATE_NAME,
     GSM8K_PROMPT_TEMPLATE_V2_NAME,
     GSM8K_PROMPT_TEMPLATE_V3_NAME,
+    GSM8K_PROMPT_TEMPLATE_V4_NAME,
     MATH500_PROMPT_TEMPLATE_NAME,
 )
+from adaptive_compute.problem_snapshot import load_phase2_partition_from_snapshot
 
 
 DEFAULT_DATASET_MANIFEST = Path("results/raw/gsm8k_subset_manifest.json")
@@ -77,7 +80,7 @@ def build_argument_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--gsm8k-contract-version",
-        choices=("v1", "v2", "v3"),
+        choices=("v1", "v2", "v3", "v4"),
         default="v3",
         help="versioned GSM8K prompt/parser contract; v1 is for historical resume only",
     )
@@ -93,6 +96,28 @@ def build_argument_parser() -> argparse.ArgumentParser:
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--dtype", default="bfloat16")
     parser.add_argument("--allow-cpu", action="store_true")
+    parser.add_argument(
+        "--disable-thinking",
+        action="store_false",
+        dest="enable_thinking",
+        help=(
+            "use the model's native non-thinking chat-template mode; "
+            "the default remains thinking mode"
+        ),
+    )
+    parser.set_defaults(enable_thinking=True)
+    parser.add_argument(
+        "--decoding-strategy",
+        choices=("standard", "force_answer"),
+        default="standard",
+        help="standard generation or maximum-budget answer forcing",
+    )
+    parser.add_argument(
+        "--answer-reserve-tokens",
+        type=int,
+        default=0,
+        help="tokens reserved for the answer phase when --decoding-strategy=force_answer",
+    )
     parser.add_argument("--results-dir", type=Path, default=Path("results"))
     parser.add_argument("--dataset-manifest", type=Path)
     parser.add_argument(
@@ -116,6 +141,14 @@ def build_argument_parser() -> argparse.ArgumentParser:
         help=(
             "use a deterministic prefix of a frozen Phase 2 partition; "
             "intended for bounded Train/Validation development pilots"
+        ),
+    )
+    parser.add_argument(
+        "--problem-snapshot",
+        type=Path,
+        help=(
+            "offline raw JSONL artifact containing the frozen problem inputs; "
+            "every selected row is hash-checked against the Phase 2 split"
         ),
     )
     parser.add_argument("--generation-cache", type=Path, default=DEFAULT_GENERATION_CACHE)
@@ -148,6 +181,7 @@ def config_from_args(args: argparse.Namespace) -> ExperimentConfig:
             "v1": (GSM8K_PROMPT_TEMPLATE_NAME, GSM8K_ANSWER_PARSER_NAME),
             "v2": (GSM8K_PROMPT_TEMPLATE_V2_NAME, GSM8K_ANSWER_PARSER_V2_NAME),
             "v3": (GSM8K_PROMPT_TEMPLATE_V3_NAME, GSM8K_ANSWER_PARSER_V3_NAME),
+            "v4": (GSM8K_PROMPT_TEMPLATE_V4_NAME, GSM8K_ANSWER_PARSER_V4_NAME),
         }[args.gsm8k_contract_version]
         dataset_settings = {
             "dataset_name": "gsm8k",
@@ -165,6 +199,9 @@ def config_from_args(args: argparse.Namespace) -> ExperimentConfig:
         model_revision=args.model_revision,
         model_backend=args.model_backend,
         model_dtype=args.dtype,
+        enable_thinking=args.enable_thinking,
+        decoding_strategy=args.decoding_strategy,
+        answer_reserve_tokens=args.answer_reserve_tokens,
         k_values=tuple(args.k_values),
         l_values=tuple(args.l_values),
         temperature=args.temperature,
@@ -257,6 +294,8 @@ def _validate_phase2_arguments(args: argparse.Namespace, config: ExperimentConfi
         raise ValueError(
             "--phase2-limit requires --phase2-split-manifest and --phase2-partition"
         )
+    if args.problem_snapshot is not None and not has_manifest:
+        raise ValueError("--problem-snapshot requires a frozen Phase 2 split")
     if args.phase2_limit is not None and args.phase2_limit <= 0:
         raise ValueError("--phase2-limit must be positive")
     if args.phase2_limit is not None and args.phase2_partition == "test":
@@ -312,7 +351,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
 
     if args.phase2_split_manifest is not None:
-        if args.dataset_name == "math500":
+        if args.problem_snapshot is not None:
+            problems = load_phase2_partition_from_snapshot(
+                dataset_name=args.dataset_name,
+                split_manifest_path=args.phase2_split_manifest,
+                partition=args.phase2_partition,
+                snapshot_path=args.problem_snapshot,
+            )
+        elif args.dataset_name == "math500":
             problems = load_math500_partition(
                 manifest_path=args.phase2_split_manifest,
                 partition=args.phase2_partition,
@@ -353,6 +399,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         dtype=args.dtype,
         dataset_partition=args.phase2_partition,
     )
+    if args.problem_snapshot is not None:
+        proposed_manifest["problem_snapshot"] = {
+            "path": str(args.problem_snapshot),
+            "sha256": file_sha256(args.problem_snapshot),
+            "role": "offline problem inputs only; rows hash-verified against split manifest",
+        }
     create_or_validate_manifest(
         experiment_dir / "experiment_manifest.json",
         proposed_manifest,
@@ -367,6 +419,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         top_p=config.top_p,
         use_chat_template=config.use_chat_template,
         enable_thinking=config.enable_thinking,
+        decoding_strategy=config.decoding_strategy,
+        answer_reserve_tokens=config.answer_reserve_tokens,
         allow_cpu=args.allow_cpu,
     )
     stats = run_shared_sample_pool(

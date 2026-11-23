@@ -1,0 +1,27 @@
+\babel@toc {vietnamese}{}\relax 
+\babel@toc {english}{}\relax 
+\babel@toc {vietnamese}{}\relax 
+\addvspace {10\p@ }
+\babel@toc {english}{}\relax 
+\babel@toc {vietnamese}{}\relax 
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\contentsline {table}{\numberline {3.1}{\ignorespaces Thông tin được phép dùng tại thời điểm ra quyết định.\relax }}{16}{table.caption.10}%
+\addvspace {10\p@ }
+\contentsline {table}{\numberline {4.1}{\ignorespaces Artifact phục vụ tái lập và kiểm toán.\relax }}{23}{table.4.1}%
+\addvspace {10\p@ }
+\contentsline {table}{\numberline {5.1}{\ignorespaces Các tập chia dùng trong thực nghiệm chính.\relax }}{25}{table.caption.12}%
+\contentsline {table}{\numberline {5.2}{\ignorespaces Không gian hành động và hợp đồng chấm điểm.\relax }}{26}{table.caption.13}%
+\contentsline {table}{\numberline {5.3}{\ignorespaces Kiểm tra tính đầy đủ của hai lưới Test chính.\relax }}{28}{table.caption.14}%
+\addvspace {10\p@ }
+\contentsline {table}{\numberline {6.1}{\ignorespaces Các điểm vận hành chính trên hai tập Test đóng băng. Khoảng tin cậy là Wilson 95\%.\relax }}{30}{table.caption.16}%
+\contentsline {table}{\numberline {6.2}{\ignorespaces So sánh ghép cặp chính. Chênh lệch được tính theo policy đứng trước trừ policy đứng sau; cột discordant là trước-only/sau-only.\relax }}{33}{table.caption.18}%
+\contentsline {table}{\numberline {6.3}{\ignorespaces So sánh ghép cặp thinking và non-thinking trên Validation-20. Token là trung bình số token sinh thực tế trên mỗi câu.\relax }}{33}{table.caption.19}%
+\contentsline {table}{\numberline {6.4}{\ignorespaces So sánh ghép cặp standard thinking và force-answer trên Test-100 tại các hard cap. $\Delta $ là accuracy force trừ standard; tiết kiệm token tính tương đối so với standard. Holm được áp dụng trên ba giá trị $k$ trong từng bộ dữ liệu.\relax }}{34}{table.caption.20}%
+\contentsline {table}{\numberline {6.5}{\ignorespaces Toàn bộ 14 policy đã đăng ký trên GSM8K Test-100, sắp theo token thực tế.\relax }}{35}{table.caption.21}%
+\contentsline {table}{\numberline {6.6}{\ignorespaces Toàn bộ 14 policy đã đăng ký trên MATH-500 Test-100, sắp theo token thực tế.\relax }}{36}{table.caption.22}%
+\addvspace {10\p@ }
+\contentsline {table}{\numberline {7.1}{\ignorespaces Tóm tắt đe dọa độ giá trị và biện pháp kiểm soát.\relax }}{42}{table.caption.23}%
+\addvspace {10\p@ }
+\contentsline {table}{\numberline {8.1}{\ignorespaces Kết luận theo từng thành phần của câu hỏi nghiên cứu.\relax }}{45}{table.caption.24}%
+\addvspace {10\p@ }

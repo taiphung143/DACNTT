@@ -266,6 +266,22 @@ PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest -q
 The environment variable only prevents unrelated globally installed pytest
 plugins from interfering with this project.
 
+## GPU-free final scientific audit
+
+The final paper audit recalculates paired counts, exact McNemar tests, Holm
+adjustments, breadth-stopping prediction equality, raw-output categories, and
+manifest hashes from the existing artifacts. It performs no model generation:
+
+```bash
+python scripts/final_scientific_audit.py
+```
+
+Machine-readable outputs are written to `paper/audit_outputs/`. The large raw
+generations and dated Phase-2 freeze/replay directories are currently local
+artifacts and are not contained in the public code commit cited by the paper.
+Do not infer an independently timestamped preregistration from their local
+dates; their integrity is instead checked through the recorded SHA-256 links.
+
 ## Frozen Phase 2 data split
 
 Phase 2 uses the immutable manifest

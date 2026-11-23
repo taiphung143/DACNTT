@@ -260,6 +260,65 @@ def test_run_grid_validate_only_accepts_train_prefix(
     assert output["expected_unique_generations"] == 24
 
 
+def test_run_grid_validate_only_records_non_thinking_mode(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _, _, _, split_path = _create_fixture(tmp_path)
+
+    assert (
+        run_grid_main(
+            [
+                "--num-problems",
+                "2",
+                "--phase2-split-manifest",
+                str(split_path),
+                "--phase2-partition",
+                "train",
+                "--phase2-limit",
+                "2",
+                "--disable-thinking",
+                "--validate-only",
+            ]
+        )
+        == 0
+    )
+    output = json.loads(capsys.readouterr().out)
+    assert output["enable_thinking"] is False
+
+
+def test_run_grid_validate_only_records_force_answer_strategy(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _, _, _, split_path = _create_fixture(tmp_path)
+
+    assert (
+        run_grid_main(
+            [
+                "--num-problems",
+                "2",
+                "--phase2-split-manifest",
+                str(split_path),
+                "--phase2-partition",
+                "train",
+                "--phase2-limit",
+                "2",
+                "--l-values",
+                "512",
+                "--decoding-strategy",
+                "force_answer",
+                "--answer-reserve-tokens",
+                "128",
+                "--validate-only",
+            ]
+        )
+        == 0
+    )
+    output = json.loads(capsys.readouterr().out)
+    assert output["decoding_strategy"] == "force_answer"
+    assert output["decoding_strategy_version"] == "force_answer_v2"
+    assert output["answer_reserve_tokens"] == 128
+
+
 def test_run_grid_rejects_test_prefix(tmp_path: Path) -> None:
     _, _, _, split_path = _create_fixture(tmp_path)
 

@@ -28,8 +28,14 @@ The evidence does not support a single joint allocation rule across both
 datasets. Fixed policies selected for each dataset and policies adapting one
 axis provide stronger operating points. The primary evidence uses one
 generation seed, one model family, and two Test partitions of 100 problems.
-Non-thinking mode, the native Qwen3 budget interface, and budget forcing remain
-proposed robustness evaluations rather than completed evidence.
+A supplementary non-thinking control on Validation reduces tokens by
+78.0--96.8\% but lowers accuracy at all six operating points. A separately
+declared post-Validation force-answer control at constrained caps reduces
+tokens by 16.1--20.2\%, sharply reduces parse/truncation failures, and raises
+observed Test accuracy by 3--10 points on GSM8K and 28--32 points on MATH-500.
+This supplementary result preserves its selection disclosure and does not
+revise the primary policy comparison; a native numeric Qwen3 budget interface
+remains unavailable in the pinned backend.
 
 \noindent\textbf{Keywords:} adaptive test-time compute; small reasoning models;
 breadth--token-cap allocation; efficient reasoning; Qwen3.

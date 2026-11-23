@@ -12,12 +12,14 @@ Toàn bộ test được chạy bằng:
 
 \begin{verbatim}
 $env:PYTEST_DISABLE_PLUGIN_AUTOLOAD='1'
+$env:MPLBACKEND='Agg'
 D:\miniconda\envs\oracle_slm\python.exe -m pytest -q
 \end{verbatim}
 
-Kết quả kiểm tra ngày 16/11/2026 là 180 test đạt, một cảnh báo deprecation từ
-SciPy và không có test thất bại. Cảnh báo không làm thay đổi output quan sát
-được của baseline.
+Kết quả kiểm tra gần nhất ngày 20/11/2026 trong môi trường \code{oracle\_slm}
+Python 3.11.15 là 203 test đạt, 5 cảnh báo và không có test thất bại. Các cảnh
+báo là deprecation từ solver SciPy/scikit-learn và không làm thay đổi artifact
+quan sát được.
 
 Hai split đóng băng, raw generation của Test-100, replay manifest, policy
 summary, paired comparison, figure manifest, source paper và PDF đã được ghi

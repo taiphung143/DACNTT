@@ -1,0 +1,7 @@
+dataset,L,n,completed_valid_final_answer,truncated_during_thinking,completed_unparseable,truncated_after_thinking,exclusive_categories_sum,parse_failure_n_nonexclusive,truncation_n_nonexclusive
+gsm8k,512,400,163,217,13,7,400,233,224
+gsm8k,1024,400,285,94,21,,400,115,94
+gsm8k,2048,400,327,49,24,,400,73,49
+math500,1024,400,57,292,,51,400,343,343
+math500,2048,400,168,194,,38,400,232,232
+math500,4096,400,273,116,,11,400,127,127

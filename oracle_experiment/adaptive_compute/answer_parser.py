@@ -55,10 +55,12 @@ _GROUPED_DECIMAL_RE = re.compile(r"^[+-]?\d{1,3}(?:,\d{3})+(?:\.\d+)?$")
 GSM8K_ANSWER_PARSER_NAME = "gsm8k_numeric_v1"
 GSM8K_ANSWER_PARSER_V2_NAME = "gsm8k_numeric_v2"
 GSM8K_ANSWER_PARSER_V3_NAME = "gsm8k_numeric_v3"
+GSM8K_ANSWER_PARSER_V4_NAME = "gsm8k_numeric_v4"
 GSM8K_ANSWER_PARSER_NAMES = (
     GSM8K_ANSWER_PARSER_NAME,
     GSM8K_ANSWER_PARSER_V2_NAME,
     GSM8K_ANSWER_PARSER_V3_NAME,
+    GSM8K_ANSWER_PARSER_V4_NAME,
 )
 MATH500_ANSWER_PARSER_V1_NAME = "math500_exact_v1"
 MATH500_ANSWER_PARSER_NAME = "math500_exact_v2"
@@ -176,6 +178,37 @@ def _parse_gsm8k_v3_explicit_answer(text: str) -> str | None:
     return normalize_numeric_answer(candidates[0].group(0))
 
 
+def _parse_gsm8k_v4_explicit_answer(text: str) -> str | None:
+    """Recover compact non-thinking conclusions after the final marker.
+
+    V4 first preserves every V3 decision. If V3 fails, it inspects only the
+    suffix after the last explicit ``Final answer:`` marker. It accepts either
+    one numeric candidate in that suffix or one numeric right-hand side of a
+    terminal equality. It never falls back to the last unmarked number.
+    """
+
+    parsed = _parse_gsm8k_v3_explicit_answer(text)
+    if parsed is not None:
+        return parsed
+    marker_matches = list(re.finditer(r"final\s+answer\s*:", text or "", re.IGNORECASE))
+    if not marker_matches:
+        return None
+    suffix = (text or "")[marker_matches[-1].end() :].strip()
+    candidates = list(_NUMBER_RE.finditer(suffix))
+    if len(candidates) == 1:
+        return normalize_numeric_answer(candidates[0].group(0))
+    terminal_equality = re.search(
+        rf"=\s*\$?\s*({_NUMBER_PATTERN})\s*[.!]?\s*$",
+        suffix,
+        re.IGNORECASE,
+    )
+    return (
+        normalize_numeric_answer(terminal_equality.group(1))
+        if terminal_equality is not None
+        else None
+    )
+
+
 def split_response_sections(text: str) -> ResponseSections:
     """Split the first Qwen ``<think>...</think>`` block from user-facing text."""
 
@@ -275,6 +308,41 @@ def parse_gsm8k_v3_response_answers(text: str) -> ResponseAnswerResult:
         else None
     )
     final_response_answer = _parse_gsm8k_v3_explicit_answer(
+        sections.final_response_text
+    )
+    if reasoning_answer is not None and final_response_answer is not None:
+        answer_source = "both"
+    elif reasoning_answer is not None:
+        answer_source = "thinking"
+    elif final_response_answer is not None:
+        answer_source = "final_response"
+    else:
+        answer_source = "none"
+    return ResponseAnswerResult(
+        reasoning_answer=reasoning_answer,
+        final_response_answer=final_response_answer,
+        answer_source=answer_source,
+        reasoning_final_disagreement=(
+            reasoning_answer is not None
+            and final_response_answer is not None
+            and normalize_numeric_answer(reasoning_answer)
+            != normalize_numeric_answer(final_response_answer)
+        ),
+        thinking_started=sections.thinking_started,
+        thinking_completed=sections.thinking_completed,
+    )
+
+
+def parse_gsm8k_v4_response_answers(text: str) -> ResponseAnswerResult:
+    """Extract GSM8K answers with the frozen non-thinking conclusion rule."""
+
+    sections = split_response_sections(text)
+    reasoning_answer = (
+        _parse_gsm8k_v4_explicit_answer(sections.reasoning_text or "")
+        if sections.thinking_completed
+        else None
+    )
+    final_response_answer = _parse_gsm8k_v4_explicit_answer(
         sections.final_response_text
     )
     if reasoning_answer is not None and final_response_answer is not None:

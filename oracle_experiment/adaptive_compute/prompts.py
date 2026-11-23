@@ -20,6 +20,10 @@ GSM8K_PROMPT_TEMPLATE_V3 = """Solve the following math problem step by step. Aft
 Problem:
 {question}
 """
+GSM8K_PROMPT_TEMPLATE_V4_NAME = "gsm8k_cot_v4"
+# V4 deliberately keeps the V3 generation prompt unchanged. Only the parser
+# contract is amended for compact non-thinking conclusions.
+GSM8K_PROMPT_TEMPLATE_V4 = GSM8K_PROMPT_TEMPLATE_V3
 
 MATH500_PROMPT_TEMPLATE_NAME = "math500_cot_v1"
 MATH500_PROMPT_TEMPLATE = r"""Solve the following competition mathematics problem step by step. End your response with exactly one line in the format: \boxed{{<final answer>}}
@@ -50,6 +54,7 @@ def get_prompt_template(template_name: str) -> str:
         GSM8K_PROMPT_TEMPLATE_NAME: GSM8K_PROMPT_TEMPLATE,
         GSM8K_PROMPT_TEMPLATE_V2_NAME: GSM8K_PROMPT_TEMPLATE_V2,
         GSM8K_PROMPT_TEMPLATE_V3_NAME: GSM8K_PROMPT_TEMPLATE_V3,
+        GSM8K_PROMPT_TEMPLATE_V4_NAME: GSM8K_PROMPT_TEMPLATE_V4,
         MATH500_PROMPT_TEMPLATE_NAME: MATH500_PROMPT_TEMPLATE,
     }
     try:
@@ -69,6 +74,10 @@ def build_prompt(template_name: str, question: str) -> str:
         if not question.strip():
             raise ValueError("question must not be empty")
         return GSM8K_PROMPT_TEMPLATE_V3.format(question=question.strip())
+    if template_name == GSM8K_PROMPT_TEMPLATE_V4_NAME:
+        if not question.strip():
+            raise ValueError("question must not be empty")
+        return GSM8K_PROMPT_TEMPLATE_V4.format(question=question.strip())
     if template_name == MATH500_PROMPT_TEMPLATE_NAME:
         return build_math500_prompt(question)
     raise ValueError(f"unsupported prompt template: {template_name}")

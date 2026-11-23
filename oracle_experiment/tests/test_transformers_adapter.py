@@ -1,6 +1,13 @@
 import pytest
 
-from adaptive_compute.models.transformers_adapter import infer_finish_reason
+from adaptive_compute.models.transformers_adapter import (
+    FORCED_ANSWER_SUFFIX,
+    infer_finish_reason,
+)
+
+
+def test_forced_answer_suffix_closes_thinking_and_cues_an_answer() -> None:
+    assert FORCED_ANSWER_SUFFIX == "</think>\n\nFinal answer:"
 
 
 def test_finish_reason_is_length_at_budget() -> None:

@@ -43,9 +43,13 @@ Mô hình chính là Qwen3-0.6B~\cite{qwen3report}, tại revision đầy đủ
 d81485cd\allowbreak f75e47ca}}. Mô hình chạy trên CUDA với
 \code{bfloat16}. Mọi ô ngân sách dùng cùng nhiệt độ $0.7$, top-$p=0.95$ và
 seed 42. Chế độ thinking được bật trong toàn bộ lưới chính. Những đối chứng
-non-thinking, native thinking-budget và budget forcing chưa được thực hiện;
-do đó chúng được ghi nhận là giới hạn và công việc tiếp theo, không phải bằng
-chứng đã hoàn tất.
+non-thinking và maximum-budget force-answer được chạy sau đó như đối chứng bổ
+sung. Non-thinking chỉ dùng Validation-20. Force-answer được chọn trên
+Validation-20, sau đó có protocol Test riêng tại các cap bị giới hạn:
+GSM8K $L=512,R=128$ và MATH-500 $L=1024,R=256$, với
+$k\in\{1,2,4\}$. Lịch sử chọn sau Validation được công khai; đối chứng này
+không được dùng để chọn lại policy hoặc thay đổi các claim Test chính. Backend
+cố định không cung cấp native numeric thinking-budget.
 
 \begin{table}[htbp]
   \centering

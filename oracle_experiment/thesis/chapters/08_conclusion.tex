@@ -45,7 +45,7 @@ minh được lợi thế của một controller kết hợp so với mọi base
 
 \section{Đóng góp đã hoàn thành}
 
-Khóa luận hoàn thành bốn đóng góp trong phạm vi đã chốt:
+Khóa luận hoàn thành năm đóng góp trong phạm vi đã chốt:
 
 \begin{enumerate}
   \item Một pipeline đánh giá có manifest bất biến, generation cache,
@@ -58,6 +58,13 @@ Khóa luận hoàn thành bốn đóng góp trong phạm vi đã chốt:
   breadth stopping trên cả hai dataset tại các token cap tương ứng.
   \item Một kết quả âm có thể kiểm toán: routing theo prompt-length tertile
   không tạo joint policy ổn định và thất bại rõ trên MATH-500.
+  \item Một đối chứng non-thinking ghép cặp trên hai tập Validation-20: chi phí
+  giảm 78.03--96.83\% nhưng accuracy thấp hơn tại cả sáu điểm, nên cấu hình này
+  không được đưa lên Test-100.
+  \item Một đối chứng force-answer được khai báo riêng tại hard cap: giảm
+  16.1--20.2\% token, giảm mạnh parse failure/truncation và tạo accuracy gap
+  dương ở cả sáu profile Test-100. GSM8K $k=1$ và cả ba profile MATH-500 có ý
+  nghĩa sau Holm; lịch sử lựa chọn sau Validation được giữ rõ ràng.
 \end{enumerate}
 
 Đóng góp phương pháp nằm ở tính tái lập và ranh giới diễn giải. Kết quả từ
@@ -80,10 +87,13 @@ phức tạp nhưng hiệu chỉnh kém.
 
 \section{Hướng phát triển}
 
-Hướng gần nhất là bổ sung robustness evaluation mà không mở lại Test chính.
-Ba decoding control cần thiết gồm non-thinking mode, native thinking-budget
-control của Qwen3 và budget forcing. Chúng sẽ kiểm tra bao nhiêu lợi ích của
-token cap đến từ reasoning bổ sung và bao nhiêu đến từ tránh cắt response.
+Hai robustness evaluation đã hoàn tất. Non-thinking rẻ hơn rõ rệt nhưng giảm
+accuracy trên Validation. Force-answer cho thấy hard cap làm mất đáp án có thể
+parse: tại cap thấp, ép chuyển sang trả lời vừa giảm token vừa cải thiện paired
+accuracy, đặc biệt rõ trên MATH-500. Đối chứng còn thiếu là native numeric
+thinking-budget, nhưng interface này không có trong backend/checkpoint cố định.
+Nếu được triển khai ở backend khác, nó phải dùng split mới thay vì tuning tiếp
+trên Test-100 đã quan sát.
 
 Tiếp theo, selected policy và comparator trực tiếp nên được chạy ở nhiều seed.
 Nếu tiếp tục phát triển joint controller, dữ liệu Train phải có đủ sự kiện
@@ -104,6 +114,10 @@ như một bài toán phân bổ chi phí có kiểm soát. Tăng compute không
 accuracy, và oracle headroom không tự chuyển thành controller triển khai được.
 Trong phạm vi Qwen3-0.6B, selective breadth dựa trên đồng thuận cung cấp mức
 tiết kiệm token cụ thể, còn joint heuristic hiện tại không ổn định giữa GSM8K
-và MATH-500. Kết quả hợp lý nhất là sử dụng policy riêng theo dataset, báo cáo
-chi phí token thực tế và giữ quy trình freeze--replay--paired evaluation khi
-phát triển những controller mạnh hơn.
+và MATH-500. Đối chứng Validation còn cho thấy non-thinking giảm mạnh chi phí
+nhưng không phải thay thế giữ nguyên accuracy. Đối chứng force-answer đồng thời
+cho thấy các hard cap thấp ban đầu đánh giá lẫn khả năng suy luận với khả năng
+kịp phát ra đáp án; cơ chế ép kết thúc cải thiện accuracy--cost trên cả hai tập
+ở các cap đã đăng ký. Kết quả hợp lý nhất là sử dụng policy riêng theo dataset,
+báo cáo chi phí token thực tế và giữ quy trình freeze--replay--paired evaluation
+khi phát triển những controller mạnh hơn.

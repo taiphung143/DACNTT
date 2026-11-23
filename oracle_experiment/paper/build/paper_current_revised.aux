@@ -1,0 +1,103 @@
+\relax 
+\citation{wei2022cot}
+\citation{wang2023selfconsistency}
+\citation{brown2024monkeys}
+\citation{wu2024inference}
+\@writefile{toc}{\contentsline {title}{Adaptive Test-Time Compute for Small Reasoning Models:\unskip \ \ignorespaces  Held-Out Evaluation of Breadth and Token-Cap Policies}{1}{}\protected@file@percent }
+\@writefile{toc}{\authcount {3}}
+\@writefile{toc}{\contentsline {author}{Dinh-Hong Vu \and The-Tai Phung \and Thai-Son Bui}{1}{}\protected@file@percent }
+\citation{aggarwal2023adaptive,wan2025rasc}
+\citation{wang2025penny}
+\citation{han2025token,wu2025thought}
+\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{2}{}\protected@file@percent }
+\citation{wei2022cot}
+\citation{wang2023selfconsistency}
+\citation{brown2024monkeys}
+\citation{aggarwal2023adaptive}
+\citation{wang2025penny}
+\citation{wan2025rasc}
+\citation{li2024esc}
+\citation{fu2025certaindex}
+\citation{han2025token}
+\citation{wu2025thought}
+\citation{snell2025scaling,damani2025hard}
+\citation{muennighoff2025s1}
+\citation{aggarwal2025l1}
+\citation{wu2025moreless}
+\citation{wang2025penny,zhai2026adaptive}
+\@writefile{toc}{\contentsline {section}{\numberline {2}Related Work}{3}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Test-Time Scaling and Self-Consistency}{3}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Adaptive Sampling and Early Stopping}{3}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}Adaptive Token Budgets}{3}{}\protected@file@percent }
+\citation{hu2026pacore}
+\citation{wang2024tokeneconomies}
+\citation{qwen3report}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.4}Difficulty-Aware Learned Allocation}{4}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.5}Joint Parallel--Sequential Compute}{4}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.6}Efficient Reasoning for Small Models}{4}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.7}Position of This Study}{4}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3}Problem Formulation}{4}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4}Experimental Framework}{5}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}System Architecture and Reproducibility}{5}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Answer Parsing and Aggregation}{5}{}\protected@file@percent }
+\citation{cobbe2021gsm8k}
+\citation{hendrycks2021math}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Evaluation pipeline. Train data determine policy thresholds, Validation selects a frozen operating point, and the selected policy and all comparators are replayed once on the held-out Test partition.}}{6}{}\protected@file@percent }
+\newlabel{fig:architecture}{{1}{6}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Models, Data, and Splits}{6}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.4}Metrics and Statistical Analysis}{7}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5}Historical Oracle Breadth--Depth Characterization}{7}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Completed Qwen3-1.7B/GSM8K accuracy characterization on 99 usable problems. Values describe the tested setting and one stochastic repetition.}}{8}{}\protected@file@percent }
+\newlabel{fig:heatmap}{{2}{8}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Observed fixed-profile accuracy--realized-token frontier.}}{8}{}\protected@file@percent }
+\newlabel{fig:pareto}{{3}{8}}
+\@writefile{toc}{\contentsline {section}{\numberline {6}Evaluated Allocation Policies}{9}{}\protected@file@percent }
+\newlabel{sec:policies}{{6}{9}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.1}Policy Definitions}{9}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Algorithm 1: frozen joint breadth--token-cap allocation.}{9}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.2}Policy Selection}{9}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7}Experimental Results}{10}{}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Frozen Qwen3-0.6B Test policy results. ``Selected'' denotes the policy fixed before its dataset's Test outcomes were accessed.}}{10}{}\protected@file@percent }
+\newlabel{tab:testpolicies}{{1}{10}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.1}GSM8K Held-Out Result}{10}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Frozen Test accuracy versus mean actual generated tokens for all 14 frozen policies per dataset. Dashed lines show descriptive Test Pareto frontiers, and black rings mark the policies selected before Test access. Frontier membership is not used for post-Test policy reselection.}}{11}{}\protected@file@percent }
+\newlabel{fig:testpolicyfrontiers}{{4}{11}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.2}MATH-500 Held-Out Result}{11}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.3}Cross-Dataset Comparison}{12}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.4}Supplementary Non-Thinking Validation Control}{12}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.5}Supplementary Maximum-Budget Force-Answer Control}{12}{}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Paired thinking versus non-thinking results on Validation-20. Each cell reports correct problems and mean realized tokens.}}{13}{}\protected@file@percent }
+\newlabel{tab:nonthinkingvalidation}{{2}{13}}
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Paired standard versus force-answer Test-100 results at constrained caps. $\Delta $ is force minus standard accuracy; S/F gives standard-only and force-only correct discordances. Holm correction is within dataset over $k=\{1,2,4\}$.}}{13}{}\protected@file@percent }
+\newlabel{tab:forceanswertest}{{3}{13}}
+\@writefile{toc}{\contentsline {section}{\numberline {8}Discussion}{13}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {9}Limitations and Future Evaluation}{14}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {10}Conclusion}{15}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {A}Historical Grid Uncertainty}{15}{}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces Historical Qwen3-1.7B/GSM8K accuracy with Wilson 95\% intervals ($n=99$).}}{16}{}\protected@file@percent }
+\newlabel{tab:historicalci}{{4}{16}}
+\@writefile{lot}{\contentsline {table}{\numberline {5}{\ignorespaces Descriptive exact paired McNemar diagnostics for the historical grid ($n=99$). $A$-only and $B$-only are discordant correctness counts; ``inc.'' denotes an inconclusive family-wise result at $\alpha =0.05$. Zero $A$-only counts are observed in the six nested depth comparisons; only $k=1$ monotonicity is structurally guaranteed, so the remaining zeros describe this realized one-seed pool rather than a general theorem.}}{16}{}\protected@file@percent }
+\newlabel{tab:historicalmcnemar}{{5}{16}}
+\bibcite{wei2022cot}{1}
+\bibcite{wang2023selfconsistency}{2}
+\bibcite{brown2024monkeys}{3}
+\bibcite{aggarwal2023adaptive}{4}
+\bibcite{wang2025penny}{5}
+\bibcite{wan2025rasc}{6}
+\bibcite{han2025token}{7}
+\bibcite{wu2025thought}{8}
+\bibcite{snell2025scaling}{9}
+\bibcite{wu2024inference}{10}
+\bibcite{muennighoff2025s1}{11}
+\bibcite{aggarwal2025l1}{12}
+\bibcite{li2024esc}{13}
+\bibcite{fu2025certaindex}{14}
+\bibcite{wu2025moreless}{15}
+\bibcite{damani2025hard}{16}
+\bibcite{zhai2026adaptive}{17}
+\bibcite{hu2026pacore}{18}
+\bibcite{wang2024tokeneconomies}{19}
+\bibcite{qwen3report}{20}
+\bibcite{cobbe2021gsm8k}{21}
+\bibcite{hendrycks2021math}{22}
+\gdef \@abspage@last{17}

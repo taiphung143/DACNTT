@@ -8,6 +8,7 @@ from adaptive_compute.answer_parser import (
     parse_gsm8k_ground_truth,
     parse_gsm8k_v2_response_answers,
     parse_gsm8k_v3_response_answers,
+    parse_gsm8k_v4_response_answers,
 )
 
 
@@ -143,4 +144,31 @@ def test_gsm8k_v3_does_not_promote_reasoning_only_answer() -> None:
     )
 
     assert result.reasoning_answer == "42"
+    assert result.final_response_answer is None
+
+
+@pytest.mark.parametrize(
+    ("response", "expected"),
+    [
+        (
+            "Final answer: The total is $15000 + $5000 = $20000. "
+            "Final answer: $20000.",
+            "20000",
+        ),
+        (
+            "Final answer: The first year is $15000 and the second is $5000. "
+            "The total is $15000 + $5000 = $20000.",
+            "20000",
+        ),
+    ],
+)
+def test_gsm8k_v4_recovers_compact_non_thinking_conclusions(
+    response: str, expected: str
+) -> None:
+    result = parse_gsm8k_v4_response_answers(response)
+    assert result.final_response_answer == expected
+
+
+def test_gsm8k_v4_refuses_unmarked_last_number() -> None:
+    result = parse_gsm8k_v4_response_answers("We compute 15 + 5 and obtain 20.")
     assert result.final_response_answer is None

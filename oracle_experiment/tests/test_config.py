@@ -30,6 +30,32 @@ def test_invalid_sampling_configuration_is_rejected() -> None:
         ExperimentConfig(top_p=0.0)
 
 
+def test_force_answer_configuration_requires_a_valid_reserve() -> None:
+    config = ExperimentConfig(
+        l_values=(512, 1024),
+        decoding_strategy="force_answer",
+        answer_reserve_tokens=128,
+    )
+    assert config.decoding_strategy == "force_answer"
+    assert config.decoding_strategy_version == "force_answer_v2"
+    assert config.answer_reserve_tokens == 128
+
+    with pytest.raises(ValueError, match="positive answer reserve"):
+        ExperimentConfig(decoding_strategy="force_answer")
+    with pytest.raises(ValueError, match="smaller than every L"):
+        ExperimentConfig(
+            l_values=(128,),
+            decoding_strategy="force_answer",
+            answer_reserve_tokens=128,
+        )
+    with pytest.raises(ValueError, match="requires enable_thinking"):
+        ExperimentConfig(
+            enable_thinking=False,
+            decoding_strategy="force_answer",
+            answer_reserve_tokens=128,
+        )
+
+
 def test_configuration_snapshot_serializes_path() -> None:
     payload = ExperimentConfig(results_dir=Path("custom-results")).to_dict()
 

@@ -72,10 +72,11 @@ ra kết quả tốt hơn~\cite{wu2025moreless}. Các kết quả này là cơ s
 đồng nhất token nhiều với reasoning tốt và luôn báo cáo cả accuracy lẫn token thực tế.
 
 Phạm vi thực nghiệm chính sử dụng decoder Qwen3 không chỉnh sửa với thinking mode
-được bật. Budget forcing, native thinking budget và non-thinking mode là các đối chứng
-quan trọng cho nghiên cứu tiếp theo, nhưng không được trình bày như bằng chứng đã hoàn
-tất. Quyết định này giữ khối lượng trong phạm vi hai tuần còn lại và bảo đảm so sánh
-chính sử dụng cùng một cơ chế sinh.
+được bật. Non-thinking mode được đánh giá bổ sung trên Validation sau khi Test chính
+đã đóng băng. Maximum-budget force-answer được đánh giá bằng protocol bổ sung
+sau Validation tại các hard cap; native numeric thinking budget không có trong
+backend cố định. Phân tách này giữ so sánh policy chính ở cùng cơ chế sinh và
+không dùng kết quả decoding-control để chọn lại policy.
 
 \section{Phân bổ kết hợp và chính sách học được}
 

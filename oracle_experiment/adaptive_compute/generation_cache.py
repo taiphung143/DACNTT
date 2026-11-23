@@ -22,13 +22,25 @@ CACHE_IDENTITY_FIELDS = (
     "temperature",
     "top_p",
     "enable_thinking",
+    "decoding_strategy",
+    "decoding_strategy_version",
+    "answer_reserve_tokens",
 )
 
 
 def generation_cache_key(record: Mapping[str, Any]) -> tuple[Any, ...]:
     """Return an exact generation identity; breadth k is deliberately absent."""
 
-    missing = [field for field in CACHE_IDENTITY_FIELDS if field not in record]
+    backward_compatible_defaults = {
+        "decoding_strategy": "standard",
+        "decoding_strategy_version": "standard_v1",
+        "answer_reserve_tokens": 0,
+    }
+    missing = [
+        field
+        for field in CACHE_IDENTITY_FIELDS
+        if field not in record and field not in backward_compatible_defaults
+    ]
     if missing:
         raise ValueError(f"generation cache identity is missing: {', '.join(missing)}")
     return (
@@ -42,6 +54,16 @@ def generation_cache_key(record: Mapping[str, Any]) -> tuple[Any, ...]:
         float(record["temperature"]),
         float(record["top_p"]),
         bool(record["enable_thinking"]),
+        str(record.get("decoding_strategy", "standard")),
+        str(
+            record.get("decoding_strategy_version")
+            or (
+                "force_answer_v1"
+                if record.get("decoding_strategy") == "force_answer"
+                else "standard_v1"
+            )
+        ),
+        int(record.get("answer_reserve_tokens", 0)),
     )
 
 
@@ -73,15 +95,33 @@ def cacheable_generation_record(record: Mapping[str, Any]) -> dict[str, Any]:
     """Materialize the fields needed to reuse and audit one generation."""
 
     generation_cache_key(record)  # validate the complete identity
+    identity = {
+        field: record[field]
+        for field in CACHE_IDENTITY_FIELDS
+        if field in record
+    }
+    identity["decoding_strategy"] = record.get("decoding_strategy", "standard")
+    identity["decoding_strategy_version"] = record.get(
+        "decoding_strategy_version"
+    ) or (
+        "force_answer_v1"
+        if identity["decoding_strategy"] == "force_answer"
+        else "standard_v1"
+    )
+    identity["answer_reserve_tokens"] = int(
+        record.get("answer_reserve_tokens", 0)
+    )
     return {
         "cache_schema_version": CACHE_SCHEMA_VERSION,
-        **{field: record[field] for field in CACHE_IDENTITY_FIELDS},
+        **identity,
         "text": record.get("text", ""),
         "raw_response": record.get("raw_response", record.get("text", "")),
         "prompt_tokens": int(record.get("prompt_tokens", 0)),
         "generated_tokens": int(record.get("generated_tokens", 0)),
         "latency_ms": float(record.get("latency_ms", 0.0)),
         "finish_reason": record.get("finish_reason", "stop"),
+        "forced_transition": bool(record.get("forced_transition", False)),
+        "injected_control_tokens": int(record.get("injected_control_tokens", 0)),
         "source_experiment_id": record.get("experiment_id"),
         "source_device": record.get("device"),
         "source_dtype": record.get("dtype"),

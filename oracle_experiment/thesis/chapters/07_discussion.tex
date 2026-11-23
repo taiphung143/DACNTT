@@ -91,10 +91,18 @@ hay không. Bốn giới hạn chính được xác định:
   năng lượng, bộ nhớ, batching hoặc thời gian người dùng chờ.
 \end{enumerate}
 
-Ba đối chứng decoding---budget forcing, native thinking budget của Qwen3 và
-non-thinking mode---là cách trực tiếp nhất để tách hiệu ứng hoàn tất output
-khỏi hiệu ứng deliberation. Chúng chưa được chạy, nên kết luận hiện tại chỉ áp
-dụng cho thinking mode với hard token cap.
+Đối chứng non-thinking đã được hoàn tất trên Validation-20. Nó giảm
+78.03--96.83\% token nhưng giảm accuracy tại cả sáu điểm vận hành; mức giảm
+trên GSM8K có ý nghĩa sau hiệu chỉnh Holm, còn MATH-500 chưa đủ lực thống kê để
+kết luận tương đương hoặc không tương đương. Kết quả này cho thấy output rẻ
+không phải một thay thế giữ nguyên accuracy cho thinking mode dưới prompt đã
+đóng băng. Đối chứng force-answer sau đó tách được một phần hiệu ứng hoàn tất
+output: tại các hard cap, nó giảm mạnh parse failure/truncation, giảm token thực
+tế và tạo chênh lệch accuracy dương ở cả sáu profile Test. GSM8K $k=1$ và cả
+ba profile MATH-500 có ý nghĩa sau Holm. Điều này cho thấy hard cap ban đầu đã
+đo lẫn khả năng giải với khả năng kịp xuất đáp án. Native numeric thinking
+budget của backend Qwen3 vẫn chưa khả dụng, nên chưa thể tách hoàn toàn độ dài
+deliberation khỏi cơ chế ép kết thúc.
 
 \section{Đe dọa độ giá trị nội tại}
 
@@ -115,6 +123,20 @@ với MATH-500, pivot sang fixed $k=2,L=4096$ được thực hiện và ghi nh�
 Validation nhưng trước Test. Trình tự này bảo vệ Test khỏi tuning, song không
 làm cho ước lượng Validation trở nên chính xác hơn. Một split Validation lớn
 hơn hoặc nested resampling sẽ giảm phụ thuộc vào 20 câu cụ thể.
+
+Đối chứng non-thinking cũng dùng chính Validation-20 và được bổ sung sau khi
+đánh giá Test chính đã đóng băng. Parser V4 của GSM8K được kiểm tra trên Train-3
+trước khi áp dụng nhất quán cho cả hai chế độ; việc reprocess pool thinking
+không làm thay đổi accuracy high-$L$. Dù quy trình này bảo vệ Test khỏi tuning,
+kích thước 20 câu vẫn chỉ cho phép xem kết quả như bằng chứng bổ sung.
+
+Force-answer cũng được chọn sau khi đọc Validation-20, trong khi kết quả Test
+standard của nghiên cứu chính đã tồn tại. Một protocol riêng đã chốt can thiệp
+và phân tích trước generation Test của force-answer, nhưng trình tự này vẫn
+không tương đương một confirmatory study với Test hoàn toàn chưa từng được
+quan sát. Vì vậy, kết quả mạnh trên MATH-500 được báo cáo như robustness
+evidence cho artifact hard-cap, không được dùng để chọn lại policy chính hoặc
+tuning thêm biến thể.
 
 \section{Đe dọa độ giá trị ngoại tại}
 
@@ -171,9 +193,9 @@ Trong phạm vi thời gian còn lại, công việc mới chỉ nên được t
 thay đổi đánh giá Test chính đã đóng băng. Thứ tự ưu tiên là:
 
 \begin{enumerate}
-  \item chạy ba decoding control trên Validation hoặc một split robustness
-  được khai báo riêng, tập trung vào các điểm vận hành đã chọn thay vì mở lại
-  toàn bộ lưới;
+  \item nếu backend tương lai cung cấp native numeric thinking budget, so sánh
+  nó với force-answer đã hoàn tất trên một split robustness mới, thay vì tuning
+  tiếp trên Test-100 hiện tại;
   \item lặp thêm seed cho selected policy và comparator trực tiếp để ước lượng
   độ nhạy ngẫu nhiên với chi phí GPU kiểm soát được;
   \item dùng phần reserve MATH-500 làm confirmatory set mới nếu bất kỳ threshold
@@ -186,4 +208,3 @@ thay đổi đánh giá Test chính đã đóng băng. Thứ tự ưu tiên là:
 Ba mục đầu có giá trị cao nhất cho độ tin cậy của kết luận hiện tại. Hai mục
 sau là hướng mở rộng nghiên cứu, không phải điều kiện bắt buộc để hoàn thành
 khóa luận ở quy mô hiện nay.
-
