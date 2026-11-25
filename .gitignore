@@ -1,0 +1,11 @@
+﻿*.zip
+*.log
+*.py[cod]
+**/__pycache__/
+
+oracle_experiment/.artifact_work/docx_deps/
+oracle_experiment/.artifact_work/pdf_deps/
+oracle_experiment/.artifact_work/thesis_pdf_deps/
+oracle_experiment/tmp/pdf_deps/
+oracle_experiment/tmp/pdf_render_deps/
+oracle_experiment/results/
