@@ -274,13 +274,23 @@ manifest hashes from the existing artifacts. It performs no model generation:
 
 ```bash
 python scripts/final_scientific_audit.py
+python scripts/round3_reviewer_audit.py
 ```
 
-Machine-readable outputs are written to `paper/audit_outputs/`. The large raw
-generations and dated Phase-2 freeze/replay directories are currently local
-artifacts and are not contained in the public code commit cited by the paper.
-Do not infer an independently timestamped preregistration from their local
-dates; their integrity is instead checked through the recorded SHA-256 links.
+The round-3 audit additionally recomputes all six breadth stopping rates, the
+GSM8K L=512 parse cross-tab, Train escalation-event counts, effective sampling
+configuration, and historical/development/Test partition relationships.
+Machine-readable outputs are written to `paper/audit_outputs/`.
+
+The GitHub repository is not anonymously accessible as of 2026-11-25. Large
+raw generations and dated Phase-2 freeze/replay directories remain local. Do
+not infer an independently timestamped preregistration from their local dates;
+their integrity is checked through the recorded SHA-256 links. A reviewable
+local package can be rebuilt with:
+
+```bash
+python scripts/build_round3_release_package.py
+```
 
 ## Frozen Phase 2 data split
 

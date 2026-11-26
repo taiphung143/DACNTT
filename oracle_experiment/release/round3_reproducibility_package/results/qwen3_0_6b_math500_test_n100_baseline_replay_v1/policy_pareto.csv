@@ -1,0 +1,15 @@
+policy_id,policy_type,partition,accuracy,avg_actual_generated_tokens,pareto_nondominated,dominated_by,interpretation
+fixed_k1_L1024,fixed_profile,test,0.13,984.67,True,,Test-only descriptive frontier
+fixed_k1_L2048,fixed_profile,test,0.4,1699.27,True,,Test-only descriptive frontier
+depth_only_input_tertile_k1_v1,depth_only_input_tertile,test,0.25,1813.19,False,fixed_k1_L2048,Test-only descriptive frontier
+fixed_k2_L1024,fixed_profile,test,0.15,1968.96,False,depth_only_input_tertile_k1_v1|fixed_k1_L2048,Test-only descriptive frontier
+fixed_k1_L4096,fixed_profile,test,0.58,2600.28,True,,Test-only descriptive frontier
+fixed_k2_L2048,fixed_profile,test,0.45,3374.69,False,fixed_k1_L4096,Test-only descriptive frontier
+breadth_only_agreement_L1024_v1,breadth_only_agreement_stopping,test,0.17,3776.01,False,depth_only_input_tertile_k1_v1|fixed_k1_L2048|fixed_k1_L4096|fixed_k2_L2048,Test-only descriptive frontier
+fixed_k4_L1024,fixed_profile,test,0.17,3933.58,False,breadth_only_agreement_L1024_v1|depth_only_input_tertile_k1_v1|fixed_k1_L2048|fixed_k1_L4096|fixed_k2_L2048,Test-only descriptive frontier
+fixed_k2_L4096,fixed_profile,test,0.66,5141.5,True,,Test-only descriptive frontier
+depth_first_tertile_validity_agreement_v1,depth_first_heuristic,test,0.36,5788.81,False,fixed_k1_L2048|fixed_k1_L4096|fixed_k2_L2048|fixed_k2_L4096,Test-only descriptive frontier
+breadth_only_agreement_L2048_v1,breadth_only_agreement_stopping,test,0.5,5894.19,False,fixed_k1_L4096|fixed_k2_L4096,Test-only descriptive frontier
+fixed_k4_L2048,fixed_profile,test,0.5,6772.25,False,breadth_only_agreement_L2048_v1|fixed_k1_L4096|fixed_k2_L4096,Test-only descriptive frontier
+breadth_only_agreement_L4096_v1,breadth_only_agreement_stopping,test,0.73,8191.12,True,,Test-only descriptive frontier
+fixed_k4_L4096,fixed_profile,test,0.73,10233.17,False,breadth_only_agreement_L4096_v1,Test-only descriptive frontier

@@ -1,0 +1,13 @@
+control,dataset,k,L,paired_n,left_correct_recomputed,right_correct_recomputed,left_only_recomputed,right_only_recomputed,exact_p_recomputed,saved_counts_match,saved_p_matches,saved_holm_p,holm_p_recomputed,saved_holm_matches
+qwen3_0_6b_forceanswer_test_comparison_v1,gsm8k,1,512,100,42,52,1,11,0.00634765625,True,True,0.01904296875,0.01904296875,True
+qwen3_0_6b_forceanswer_test_comparison_v1,gsm8k,2,512,100,47,54,3,10,0.09228515625,True,True,0.1845703125,0.1845703125,True
+qwen3_0_6b_forceanswer_test_comparison_v1,gsm8k,4,512,100,53,56,4,7,0.548828125,True,True,0.548828125,0.548828125,True
+qwen3_0_6b_forceanswer_test_comparison_v1,math500,1,1024,100,13,42,0,29,3.725290298461914e-09,True,True,7.450580596923828e-09,7.450580596923828e-09,True
+qwen3_0_6b_forceanswer_test_comparison_v1,math500,2,1024,100,15,43,0,28,7.450580596923828e-09,True,True,7.450580596923828e-09,7.450580596923828e-09,True
+qwen3_0_6b_forceanswer_test_comparison_v1,math500,4,1024,100,17,49,0,32,4.656612873077393e-10,True,True,1.3969838619232178e-09,1.3969838619232178e-09,True
+qwen3_0_6b_nonthinking_validation_comparison_v1,gsm8k,1,2048,20,13,1,12,0,0.00048828125,True,True,0.00048828125,0.00048828125,True
+qwen3_0_6b_nonthinking_validation_comparison_v1,gsm8k,2,2048,20,14,1,13,0,0.000244140625,True,True,0.00048828125,0.00048828125,True
+qwen3_0_6b_nonthinking_validation_comparison_v1,gsm8k,4,2048,20,15,1,14,0,0.0001220703125,True,True,0.0003662109375,0.0003662109375,True
+qwen3_0_6b_nonthinking_validation_comparison_v1,math500,1,4096,20,11,8,6,3,0.5078125,True,True,1.0,1.0,True
+qwen3_0_6b_nonthinking_validation_comparison_v1,math500,2,4096,20,13,8,6,1,0.125,True,True,0.375,0.375,True
+qwen3_0_6b_nonthinking_validation_comparison_v1,math500,4,4096,20,13,11,3,1,0.625,True,True,1.0,1.0,True

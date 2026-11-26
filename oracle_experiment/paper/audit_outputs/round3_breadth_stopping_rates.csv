@@ -1,0 +1,7 @@
+dataset,L,n,stopped_at_k2_n,required_k4_n,stopping_frequency,breadth_stop_mean_actual_tokens,fixed_k4_mean_actual_tokens,mean_actual_tokens_saved,mean_actual_token_saving_fraction,breadth_stop_correct_n,fixed_k4_correct_n,prediction_equal_n,correctness_equal_n,trace_path
+GSM8K,512,100,28,72,0.28,1601.83,1811.51,209.68000000000006,0.1157487400014353,53,53,100,100,results/phase2/qwen3_0_6b_gsm8k_test_n100_policy_replay_v3/breadth_only_agreement_traces.csv
+GSM8K,1024,100,54,46,0.54,1994.52,2535.17,540.6500000000001,0.21325986028550356,76,76,100,100,results/phase2/qwen3_0_6b_gsm8k_test_n100_policy_replay_v3/breadth_only_agreement_traces.csv
+GSM8K,2048,100,62,38,0.62,2455.01,3240.74,785.7299999999996,0.24245388398945908,76,76,100,100,results/phase2/qwen3_0_6b_gsm8k_test_n100_policy_replay_v3/breadth_only_agreement_traces.csv
+MATH-500,1024,100,11,89,0.11,3776.01,3933.58,157.5699999999997,0.04005765740114595,17,17,100,100,results/phase2/qwen3_0_6b_math500_test_n100_baseline_replay_v1/breadth_only_agreement_traces.csv
+MATH-500,2048,100,37,63,0.37,5894.19,6772.25,878.0600000000004,0.12965557975562042,50,50,100,100,results/phase2/qwen3_0_6b_math500_test_n100_baseline_replay_v1/breadth_only_agreement_traces.csv
+MATH-500,4096,100,57,43,0.57,8191.12,10233.17,2042.0500000000002,0.199552044967493,73,73,100,100,results/phase2/qwen3_0_6b_math500_test_n100_baseline_replay_v1/breadth_only_agreement_traces.csv

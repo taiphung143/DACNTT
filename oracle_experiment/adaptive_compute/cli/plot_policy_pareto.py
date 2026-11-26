@@ -165,7 +165,7 @@ def plot_panel(
             (point["tokens"], 100.0 * point["accuracy"]),
             xytext=(dx, dy),
             textcoords="offset points",
-            fontsize=7.5,
+            fontsize=9.5,
             ha="left" if dx > 0 else "right",
             va="bottom" if dy > 0 else "top",
         )
@@ -213,7 +213,11 @@ def generate_policy_pareto_figures(
     plt.rcParams.update(
         {
             "font.family": "serif",
-            "font.size": 9,
+            "font.size": 11,
+            "axes.labelsize": 11,
+            "axes.titlesize": 11.5,
+            "xtick.labelsize": 9.5,
+            "ytick.labelsize": 9.5,
             "axes.spines.top": False,
             "axes.spines.right": False,
         }
@@ -225,12 +229,12 @@ def generate_policy_pareto_figures(
     ):
         fig, ax = plt.subplots(figsize=(7.2, 4.8))
         plot_panel(ax, points, title=title, selected_policy_id=selected)
-        ax.legend(fontsize=7.5, frameon=True, loc="lower right")
+        ax.legend(fontsize=9.5, frameon=True, loc="lower right")
         fig.tight_layout()
         outputs.extend(_save_figure(fig, output_dir / stem))
         plt.close(fig)
 
-    fig, axes = plt.subplots(1, 2, figsize=(11.2, 4.5))
+    fig, axes = plt.subplots(1, 2, figsize=(12.2, 5.2))
     plot_panel(
         axes[0],
         gsm_points,
@@ -249,7 +253,7 @@ def generate_policy_pareto_figures(
         labels,
         loc="lower center",
         ncol=3,
-        fontsize=8,
+        fontsize=9.5,
         frameon=True,
         bbox_to_anchor=(0.5, -0.01),
     )

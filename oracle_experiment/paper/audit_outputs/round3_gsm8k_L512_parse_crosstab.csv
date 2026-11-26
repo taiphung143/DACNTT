@@ -1,0 +1,8 @@
+truncated,parseable,truncation_stage,failure_type,final_response_answer_present,count
+False,False,none,parse_failure,False,13
+False,True,none,correct,True,150
+False,True,none,wrong_answer,True,13
+True,False,after_thinking,truncated_after_reasoning,False,3
+True,False,during_thinking,truncated_before_answer,False,217
+True,True,after_thinking,correct,True,2
+True,True,after_thinking,wrong_answer,True,2

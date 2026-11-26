@@ -1,0 +1,35 @@
+{
+  "sources": {
+    "split_manifest": "data/splits/phase2_gsm8k_split_v1.json",
+    "historical_subset_manifest": "results/raw/gsm8k_subset_manifest_n100.json",
+    "historical_experiment_manifest": "results/qwen3_1_7b_gsm8k_n100_r1/experiment_manifest.json"
+  },
+  "counts": {
+    "historical_manifest": 100,
+    "historical_experiment": 100,
+    "historical_evaluation_included": 99,
+    "train": 79,
+    "validation": 20,
+    "test": 100
+  },
+  "excluded_historical_problem_ids": [
+    "gsm8k-test-01309"
+  ],
+  "checks": {
+    "historical_experiment_equals_historical_manifest_ids": true,
+    "historical_valid99_equals_train_union_validation_ids": true,
+    "historical_manifest100_equals_development_plus_excluded_ids": true,
+    "historical_question_hashes_equal_development_plus_excluded": true,
+    "historical_test_id_overlap_n": 0,
+    "development_test_id_overlap_n": 0,
+    "train_validation_id_overlap_n": 0,
+    "train_test_question_hash_overlap_n": 0,
+    "validation_test_question_hash_overlap_n": 0,
+    "train_validation_question_hash_overlap_n": 0
+  },
+  "sha256": {
+    "split_manifest": "a052a7e46ec8eb613e63112ed67528c0615a364779b4dac80e3930b69b5bd6e8",
+    "historical_subset_manifest": "62d9eecefa31f0c25a7354a9bd87bc7abf44d39afcee7e3e50568f9c1eac475f",
+    "historical_experiment_manifest": "ff51d5adcc055be7e9f8d2806aba29b4a353d75b20ee79feb90feb085a210e09"
+  }
+}

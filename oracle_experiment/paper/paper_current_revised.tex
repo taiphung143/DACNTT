@@ -37,29 +37,24 @@ Ho Chi Minh City, Vietnam\\
 \maketitle
 
 \begin{abstract}
-Test-time compute can improve language-model reasoning by extending a single
-trajectory or sampling multiple trajectories, but a fixed configuration may
-waste computation on easy inputs and remain inadequate for difficult ones. We
-study this allocation problem for a small open-weight reasoning model without
-an external verifier. Using Qwen3-0.6B, we freeze dataset-specific action
-spaces, policies, and 100-problem Test partitions for GSM8K and MATH-500, and
-measure exact-answer accuracy, realized generated tokens, latency, validity,
-and truncation. On GSM8K, the pre-Test selected two-sample ESC-style stopping
-policy at $L=1024$ attains 76\% accuracy with 1,994.5 mean generated tokens,
-matching fixed $k=4,L=1024$ while using 21.3\% fewer tokens. On MATH-500,
-the Validation-selected fixed $k=2,L=4096$ policy attains 66\% with 5,141.5
-tokens. The frozen joint depth-first heuristic reaches only 36\% with 5,788.8
-tokens and is significantly worse than the selected fixed policy. A
-breadth-only stopping comparator at $L=4096$ reaches 73\% while using 20.0\%
-fewer tokens than fixed $k=4,L=4096$. Equality of their predictions is a
-structural consequence of nested samples and the deterministic tie break; the
-empirical result is the amount of compute saved. The tested prompt-tertile
-joint heuristic does not provide a consistent cross-dataset Pareto improvement,
-whereas dataset-specific fixed and single-axis policies remain competitive.
-These results are reported without Test-dependent retuning. In a separately declared
-post-Validation control, forced transition to an answer at constrained caps
-reduces tokens by 16.1--20.2\%, sharply reduces truncation, and improves
-Test-100 accuracy by 3--10 points on GSM8K and 28--32 points on MATH-500.
+Test-time compute improves reasoning by extending one trajectory or sampling
+several, yet fixed profiles can misallocate computation. We study verifier-free
+allocation for Qwen3-0.6B on frozen 100-problem Test
+partitions of GSM8K and MATH-500, measuring exact-answer accuracy and actual
+generated tokens. On GSM8K, the Validation-selected two-sample ESC-style rule
+at $L=1024$ attains 76\% accuracy with 1,994.5 mean tokens. By construction,
+it returns the same answers as fixed $k=4$ at that cap while using 21.3\% fewer
+tokens. On MATH-500, the selected fixed $k=2,L=4096$ profile attains 66\% with
+5,141.5 tokens. The frozen prompt-tertile joint heuristic attains 36\% with
+5,788.8 tokens and is significantly worse. Agreement stopping at $L=4096$
+attains 73\% and saves 20.0\% relative to fixed $k=4$. Thus, the tested joint
+heuristic lacks a consistent cross-dataset Pareto gain; dataset-specific fixed
+and single-axis policies remain competitive. A
+supplementary post-hoc force-answer control at the lowest caps reduces tokens
+by 16.1--20.2\%, sharply lowers truncation, and improves Test accuracy by
+3--10 points on GSM8K and 28--32 points on MATH-500. This control shows that
+low-cap performance depends on answer completion and was not used to retune
+the primary policies.
 
 \keywords{Adaptive test-time compute \and Small reasoning models \and
 Breadth--depth allocation \and Adaptive inference \and Compute-efficient
@@ -128,85 +123,35 @@ policy evaluated here is a deterministic heuristic.
 
 \section{Related Work}
 
-\subsection{Test-Time Scaling and Self-Consistency}
-
 Chain-of-thought prompting elicits intermediate reasoning before the final
 answer~\cite{wei2022cot}. Self-consistency samples several reasoning paths and
-selects the most frequent answer~\cite{wang2023selfconsistency}. Repeated
-sampling can increase solution coverage, although converting coverage into
-final-answer accuracy may require effective selection or verification
-\cite{brown2024monkeys}. These methods establish breadth as one test-time
-compute axis but normally use a preset sample count.
+selects the most frequent answer~\cite{wang2023selfconsistency}; repeated
+sampling increases coverage but still requires reliable selection
+\cite{brown2024monkeys}. Adaptive-Consistency~\cite{aggarwal2023adaptive},
+ESC~\cite{li2024esc}, and related variants stop when answers stabilize or
+combine prior difficulty with posterior evidence
+\cite{wang2025penny,wan2025rasc}. Certaindex similarly uses answer stability to
+detect diminishing returns~\cite{fu2025certaindex}. Our breadth comparator is a
+minimal exact-agreement rule capped at four samples.
 
-\subsection{Adaptive Sampling and Early Stopping}
+Token allocation is the complementary axis. Budget-aware reasoning assigns
+caps from estimated complexity~\cite{han2025token}, while Thought Calibration
+uses hidden-state probes~\cite{wu2025thought}. Other methods learn
+input-dependent allocation~\cite{snell2025scaling,damani2025hard}. s1 applies
+budget forcing~\cite{muennighoff2025s1}, and L1 learns prompt-conditioned
+length control~\cite{aggarwal2025l1}. Longer traces are not uniformly better
+\cite{wu2025moreless}; accordingly, we report realized tokens and truncation
+and do not interpret $L$ as semantic reasoning depth.
 
-Adaptive-Consistency stops sampling when the answer distribution stabilizes
-\cite{aggarwal2023adaptive}. Difficulty-Adaptive Self-Consistency combines
-prior difficulty estimates with posterior evidence~\cite{wang2025penny}.
-Reasoning-Aware Self-Consistency evaluates both answers and rationales when
-stopping and aggregating~\cite{wan2025rasc}. These are direct precedents for
-adaptive breadth. Early-Stopping Self-Consistency (ESC) likewise terminates
-sampling after sufficient answer agreement~\cite{li2024esc}, while Certaindex
-uses answer stabilization to signal that further reasoning compute is unlikely
-to change the result~\cite{fu2025certaindex}. Our agreement-stopping baseline
-is intentionally simpler: it uses exact normalized-answer agreement and at
-most four independent samples.
-
-\subsection{Adaptive Token Budgets}
-
-Token-Budget-Aware LLM Reasoning assigns budgets according to estimated
-complexity~\cite{han2025token}. Thought Calibration uses probes over hidden
-representations to detect when further reasoning is unlikely to help
-\cite{wu2025thought}. More general approaches learn input-dependent allocation
-of inference computation~\cite{snell2025scaling,damani2025hard}. The s1 study
-controls reasoning length through budget forcing~\cite{muennighoff2025s1}, and
-L1 learns prompt-conditioned length control with reinforcement
-learning~\cite{aggarwal2025l1}. These methods also show that a hard generation
-cutoff is only one way to impose a budget. Our primary policy grids use an
-unmodified Qwen3 decoder; a separately declared supplementary experiment tests
-maximum-budget forced-answer decoding, but does not test learned
-length control.
-
-Longer reasoning is not uniformly beneficial. ``When More is Less'' reports
-an inverted-U relation between chain-of-thought length and accuracy in several
-settings~\cite{wu2025moreless}. This motivates reporting observed token use and
-truncation rather than treating $L$ as semantic reasoning depth.
-
-\subsection{Difficulty-Aware Learned Allocation}
-
-Difficulty prediction has been used to choose sample counts and allocate
-average budgets across a problem set~\cite{wang2025penny,zhai2026adaptive}.
-Strong oracle gaps do not imply that oracle actions can be predicted from
-cheap features. We therefore evaluate policy accuracy and realized cost
-directly instead of treating profile-label classification as the scientific
-endpoint.
-
-\subsection{Joint Parallel--Sequential Compute}
-
-Parallel and sequential computation can complement one another. PaCoRe, for
-example, coordinates parallel trajectories across multiple rounds through
-message passing~\cite{hu2026pacore}. That approach relies on specialized
-training and synthesis at a much larger scale. Our evaluated policy family
-instead targets local, small-model inference and chooses whether to purchase
-another independent trajectory after observing only signals already produced
-by the current policy.
-
-\subsection{Efficient Reasoning for Small Models}
-
-Budget-aware evaluation is essential because a more elaborate strategy can
-appear better simply by consuming more computation~\cite{wang2024tokeneconomies}.
-Small open-weight models make this accounting especially relevant under a
-single-GPU constraint. Qwen3 provides suitable open-weight model sizes for the
-study~\cite{qwen3report}; however, results from its 1.7B and 0.6B variants are
-kept as separate strata rather than pooled into a model-family claim.
-
-\subsection{Position of This Study}
-
-This study investigates joint breadth--token-cap allocation under four
-constraints: a small open-weight model, no external verifier, strict
-final-answer parsing, and realized-token cost accounting. Fixed profiles,
-adaptive breadth, adaptive depth, and a deterministic joint heuristic are
-compared on two held-out datasets.
+Difficulty prediction can select sample counts or distribute a global compute
+budget~\cite{wang2025penny,zhai2026adaptive}. PaCoRe coordinates parallel
+trajectories across sequential rounds using specialized training and synthesis
+\cite{hu2026pacore}. Our narrower setting uses no verifier or hidden states and
+decides from the input and already-paid outputs. Because elaborate strategies
+can look better by spending more, all policies are compared using actual
+generated tokens~\cite{wang2024tokeneconomies}. Qwen3 supplies the small
+open-weight models~\cite{qwen3report}; its 1.7B historical and 0.6B primary
+results remain separate evidence strata.
 
 \section{Problem Formulation}
 
@@ -288,8 +233,12 @@ repetition ID, and sample ID, not on $k$ or $L$. The system separates adapters,
 strict parsing, generation, checkpoint/resume, provenance manifests, cost
 accounting, controller-data construction, and statistical reporting.
 Generation uses multinomial sampling (\texttt{do\_sample=true}), temperature
-0.7, nucleus top-$p=0.95$, the pinned backend's untuned top-$k$ default, and at
-most four independent sample IDs. Reusing a sample ID across $L$ gives a prefix-identical
+0.7, nucleus top-$p=0.95$, and top-$k=20$. The adapter explicitly overrides
+temperature and top-$p$ but not top-$k$; the latter is inherited from the
+pinned revision's \texttt{generation\_config.json}. Temperature 0.7 is the
+configuration used consistently in these runs, not the result of a reported
+temperature-tuning study. At most four independent sample IDs are used.
+Reusing a sample ID across $L$ gives a prefix-identical
 trajectory until the shorter run stops or reaches its cap; this dependence is
 accounted for in the interpretation of paired comparisons.
 
@@ -332,8 +281,12 @@ $L\in\{512,1024,2048\}$. MATH-500~\cite{hendrycks2021math} uses prompt
 $L\in\{1024,2048,4096\}$. Both use $k\in\{1,2,4\}$.
 
 The frozen GSM8K manifest contains 79 Train, 20 Validation, and 100 disjoint
-Test problems. The MATH-500 manifest contains 80 Train, 20 Validation, and 100
-disjoint Test problems, stratified by subject and difficulty. Validation is
+Test problems. The historical 100-problem GSM8K manifest consists of these 99
+Train/Validation problems plus the audited item \texttt{gsm8k-test-01309}; its
+99 included problems therefore equal Train $\cup$ Validation exactly. The
+held-out Test set has zero ID or question-hash overlap with that historical
+set. The MATH-500 manifest contains 80 Train, 20 Validation, and 100 disjoint
+Test problems, stratified by subject and difficulty. Validation is
 used for selection and pivot decisions, never as final evidence. After policy
 and software freezing, each Test grid was generated once, producing all 1,200
 expected records without generation errors, missing keys, or duplicates. Test
@@ -371,59 +324,20 @@ profiles yields the fixed, depth-only, and breadth-only variants.
 
 \section{Historical Oracle Breadth--Depth Characterization}
 
-The completed characterization evaluates nine profiles with breadths
-$\{1,2,4\}$ and token caps $\{512,1024,2048\}$. Figure~\ref{fig:heatmap}
-shows higher observed accuracy at larger caps. These rows are statistically
-dependent rather than independent stochastic trials. Because the seed is
-unchanged across $L$, a completed $k=1$ response stops identically at a larger
-cap, while an uncompleted shorter response has no strict final answer; $k=1$
-correctness is therefore monotone in this implementation. This guarantee does
-not extend to $k>1$: an answer that becomes valid at a larger cap can change the
-valid-only vote and its deterministic tie break. The realized historical pool
-nevertheless contains zero shorter-only successes in all six adjacent-depth
-comparisons. Similarly, $k=2$ can change the $k=1$ decision only when sample 0
-is invalid, but no general monotonicity guarantee applies to $k=2$ versus
-$k=4$. Appendix~A reports the observed discordances as descriptive diagnostics;
-statistical dependence must not be confused with deterministic monotonicity.
+The nine-profile Qwen3-1.7B/GSM8K grid motivated the staged design but is not
+pooled with the primary 0.6B evidence. At equal nominal budget $kL=2048$,
+$4\times512$, $2\times1024$, and $1\times2048$ attain 28.28\%, 65.66\%, and
+70.71\% accuracy, with respective truncation rates of 85.4\%, 35.9\%, and
+18.2\%. The realized pool contains no shorter-cap-only successes in the six
+adjacent-depth comparisons. Only $k=1$ monotonicity follows from the decoding
+and parsing contract; the remaining zeros are observations from one seed.
 
-\begin{figure}[!ht]
-\centering
-\begin{minipage}[t]{0.48\textwidth}
-\centering
-\includegraphics[width=\linewidth]{accuracy_heatmap.png}
-\caption{Completed Qwen3-1.7B/GSM8K accuracy characterization on 99 usable
-problems. Values describe the tested setting and one stochastic repetition.}
-\label{fig:heatmap}
-\end{minipage}\hfill
-\begin{minipage}[t]{0.48\textwidth}
-\centering
-\includegraphics[width=\linewidth]{pareto.png}
-\caption{Observed fixed-profile accuracy--realized-token frontier.}
-\label{fig:pareto}
-\end{minipage}
-\end{figure}
-
-At equal nominal budget $kL=2048$, $4\times512$, $2\times1024$, and
-$1\times2048$ attain 28.28\%, 65.66\%, and 70.71\% accuracy while consuming
-1,988.9, 1,616.0, and 1,079.1 mean tokens, respectively. Their raw-sample
-truncation rates are 85.4\%, 35.9\%, and 18.2\%. This supports the operational
-hypothesis but does not establish universal depth dominance.
-
-The joint cheapest-correct oracle solves 83 of 99 problems. Seventy select a
-$k=1$ profile; 13 require $k>1$ under the observed sample pool. Fifty-five
-select $L=2048$, and none selects $L=512$ as cheapest-correct. This imbalance
-argues against a flat nine-class controller and motivates staged escalation
-decisions.
-
-Figure~\ref{fig:pareto} shows the observed fixed-profile frontier. The best
-fixed profile solves 83 problems at 4,246.7 tokens per problem; the joint
-oracle matches that accuracy at 1,023.5 tokens. The breadth-only oracle also
-solves 83 at 1,270.6 tokens, while the $k=1$ depth-only oracle solves 70 at
-750.5 tokens. At
-approximately this realized cost, the exact budget-constrained frontier solves
-83 problems for joint allocation, 70 for depth-only, 69 for breadth-only, and
-53 for fixed allocation. The 13.13-point joint-versus-depth oracle gap is an
-opportunity estimate, not controller evidence.
+The cheapest-correct joint oracle solves 83/99 problems at 1,023.5 mean
+tokens, compared with 83/99 at 4,246.7 tokens for the best fixed profile.
+Thirteen oracle choices require $k>1$. This hindsight gap motivated selective
+breadth but does not demonstrate a deployable controller. Vector versions of
+the historical heatmap and fixed-profile frontier, Wilson intervals, and all
+planned McNemar comparisons are reported in Supplementary Sections S1--S2.
 
 \section{Evaluated Allocation Policies}
 \label{sec:policies}
@@ -482,9 +396,13 @@ tokens of every generated trajectory; if no answer is valid, return invalid.
 \subsection{Policy Selection}
 
 Fitting a learned joint controller required at least 30 positive Train
-escalation events per stage. The observed Train split did not meet this
-threshold. We therefore evaluated the frozen deterministic heuristic and
-do not report a learned-controller result.
+escalation labels per stage. On GSM8K, the two depth stages contain 15 and 6
+positives; the six breadth stages contain 7, 8, 5, 3, 3, and 4. On MATH-500,
+the corresponding counts are 22 and 8 for depth, and 10, 2, 2, 6, 4, and 5
+for breadth. Counts use the primary utility setting once per problem and stage;
+they are not multiplied across sensitivity values of the utility weight.
+No stage reaches 30, so we evaluate the deterministic heuristic and make no
+held-out claim for a learned joint controller.
 
 On GSM8K Validation, agreement stopping at $L=1024$ and the joint heuristic
 both solve 15/20 problems; agreement stopping uses 2,095.85 rather than
@@ -589,6 +507,14 @@ Validation-selected fixed policy remains the primary MATH operating point.
 
 \subsection{Cross-Dataset Comparison}
 
+Across all six agreement-stopping policies, the stop-at-$k=2$ counts are
+28, 54, and 62 of 100 for GSM8K at $L=512,1024,2048$, and 11, 37, and 57
+for MATH-500 at $L=1024,2048,4096$. The corresponding mean actual-token
+savings over fixed $k=4$ are 11.57\%, 21.33\%, and 24.25\% on GSM8K, and
+4.01\%, 12.97\%, and 19.96\% on MATH-500. Each adaptive/fixed pair returns
+identical predictions by construction (600/600 verified); the stopping rates
+and token savings are the measured outcomes.
+
 The prompt-tertile joint heuristic is a lower-cost Pareto point on GSM8K but is
 decisively dominated on MATH-500. The result does not support this heuristic as
 a common allocation rule across the two datasets. Dataset-specific fixed or single-axis policies
@@ -596,12 +522,14 @@ provide stronger operating points, while the adaptive-breadth findings remain
 positive only as compute-saving measurements under the structural invariant.
 
 Across the standard 0.6B Test grids, GSM8K raw-sample parse-failure rates at
-$L=512,1024,2048$ are 58.2\%, 28.8\%, and 18.2\%, with truncation rates 56.0\%,
-23.5\%, and 12.2\%. MATH-500 parse-failure and truncation rates are both
-85.8\%, 58.0\%, and 31.8\% at $L=1024,2048,4096$. Each rate uses 400 raw
+$L=512,1024,2048$ are 58.25\%, 28.75\%, and 18.25\%, with truncation rates
+56.00\%, 23.50\%, and 12.25\%. MATH-500 parse-failure and truncation rates are
+both 85.75\%, 58.00\%, and 31.75\% at $L=1024,2048,4096$. Each rate uses 400 raw
 trajectories (100 problems times four sample IDs); no invalid output is allowed
 to vote. Parse failure and truncation are overlapping diagnostics, not mutually
-exclusive categories. The mutually exclusive counts
+exclusive categories. In particular, four of the seven GSM8K $L=512$ outputs
+truncated after thinking still contain a parseable final answer, giving 233
+parse failures rather than 237. The mutually exclusive counts
 $(\text{during-thinking},\text{after-thinking},\text{completed-unparseable},
 \text{completed-valid})$ are $(217,7,13,163)$, $(94,0,21,285)$, and
 $(49,0,24,327)$ for GSM8K in ascending $L$, and $(292,51,0,57)$,
@@ -613,28 +541,8 @@ We additionally compared thinking and non-thinking generation on the same
 frozen Validation-20 problems, using the same model revision, prompts,
 sampling settings, and high token cap for each dataset. This control was run
 after the primary Test evaluation and did not access or alter Test-100.
-
-\begin{table}[t]
-\centering
-\caption{Paired thinking versus non-thinking results on Validation-20. Each
-cell reports correct problems and mean realized tokens.}
-\label{tab:nonthinkingvalidation}
-\footnotesize
-\begin{tabular}{llrrr}
-\toprule
-Data & $(k,L)$ & Thinking & Non-thinking & Token saving \\
-\midrule
-GSM8K & $(1,2048)$ & 13/20; 986.15 & 1/20; 31.30 & 96.83\% \\
-GSM8K & $(2,2048)$ & 14/20; 1,969.70 & 1/20; 84.85 & 95.69\% \\
-GSM8K & $(4,2048)$ & 15/20; 3,593.85 & 1/20; 143.65 & 96.00\% \\
-MATH & $(1,4096)$ & 11/20; 2,388.70 & 8/20; 471.90 & 80.24\% \\
-MATH & $(2,4096)$ & 13/20; 4,700.50 & 8/20; 923.40 & 80.36\% \\
-MATH & $(4,4096)$ & 13/20; 8,979.10 & 11/20; 1,972.50 & 78.03\% \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-Non-thinking is cheaper but less accurate at all six points. On GSM8K, the
+Non-thinking is cheaper but less accurate at all six points; the full paired
+table is Supplementary Table S3. On GSM8K, the
 $-60$ to $-70$ percentage-point gaps remain significant after Holm correction
 (adjusted $p\leq0.0004883$). The MATH point estimates favor thinking by
 10--25 points, but the paired tests are inconclusive at $n=20$; this is not
@@ -663,16 +571,17 @@ force-only correct discordances. Holm correction is within dataset over
 $k=\{1,2,4\}$.}
 \label{tab:forceanswertest}
 \footnotesize
-\begin{tabular}{llrrrrrr}
+\setlength{\tabcolsep}{4.5pt}
+\begin{tabular}{llrr@{\hspace{5pt}}rrrr}
 \toprule
-Data & $(k,L)$ & Standard & Force & $\Delta$ & S/F & Token saving & Holm $p$ \\
+Data & $(k,L)$ & Standard & Force & $\Delta$ (pp) & S/F & Token saving & Holm $p$ \\
 \midrule
-GSM8K & $(1,512)$ & 42 & 52 & +10 pp & 1/11 & 16.2\% & 0.0190 \\
-GSM8K & $(2,512)$ & 47 & 54 & +7 pp & 3/10 & 16.4\% & 0.1846 \\
-GSM8K & $(4,512)$ & 53 & 56 & +3 pp & 4/7 & 16.1\% & 0.5488 \\
-MATH & $(1,1024)$ & 13 & 42 & +29 pp & 0/29 & 20.2\% & $7.45\!\times\!10^{-9}$ \\
-MATH & $(2,1024)$ & 15 & 43 & +28 pp & 0/28 & 20.2\% & $7.45\!\times\!10^{-9}$ \\
-MATH & $(4,1024)$ & 17 & 49 & +32 pp & 0/32 & 19.9\% & $1.40\!\times\!10^{-9}$ \\
+GSM8K & $(1,512)$ & 42 & 52 & +10 & 1/11 & 16.2\% & 0.0190 \\
+GSM8K & $(2,512)$ & 47 & 54 & +7 & 3/10 & 16.4\% & 0.1846 \\
+GSM8K & $(4,512)$ & 53 & 56 & +3 & 4/7 & 16.1\% & 0.5488 \\
+MATH & $(1,1024)$ & 13 & 42 & +29 & 0/29 & 20.2\% & $7.45\!\times\!10^{-9}$ \\
+MATH & $(2,1024)$ & 15 & 43 & +28 & 0/28 & 20.2\% & $7.45\!\times\!10^{-9}$ \\
+MATH & $(4,1024)$ & 17 & 49 & +32 & 0/32 & 19.9\% & $1.40\!\times\!10^{-9}$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -687,21 +596,36 @@ retuning was performed.
 
 \section{Discussion}
 
-Across both datasets, adequate token cap is important: many short samples
-cannot compensate for severe truncation. The two-sample ESC-style rule removes
-unnecessary later samples, but its prediction equality with fixed $k=4$ is
-guaranteed by this implementation. Its contribution here is the measured
-compute saving, not a new accuracy-preservation result. The useful operating point is dataset-dependent:
-GSM8K selects adaptive breadth at moderate depth, whereas MATH Validation
-selects a fixed $k=2$ high-depth profile.
+Low-cap accuracy in the primary grids reflects both reasoning and decoder
+completion. Standard decoding stops at the hard cap even when the model is
+still inside its thinking block. Force-answer decoding instead reserves a
+short continuation for the final response. On MATH-500 at $k=1,L=1024$, this
+change raises accuracy from 13\% to 42\% while reducing generated tokens by
+20.2\%. The large gain, together with the drop in parse failure, shows that
+many low-cap errors are answer-completion failures rather than direct evidence
+that the underlying reasoning cannot succeed within a small budget. The
+effect is smaller on GSM8K, consistent with its lower low-cap truncation burden.
+
+This control changes the interpretation of the prompt-tertile joint heuristic.
+Its poor MATH result under standard decoding still rejects that evaluated
+policy, but part of the deficit comes from assigning caps at which standard
+decoding often fails to emit a final answer. Policy rankings may differ under
+another decoding strategy; the present force-answer experiment does not replay
+all 14 policies and therefore cannot establish a replacement ranking.
+
+The two-sample ESC-style rule removes unnecessary later samples. By
+construction it returns the same answers as fixed $k=4$; token savings are
+measured empirically. The useful operating point remains dataset-dependent:
+GSM8K selects adaptive breadth at a moderate cap, whereas MATH Validation
+selects a fixed $k=2$ high-cap profile.
 
 Retrospective joint-oracle headroom did not translate into a stable cheap
-prompt-tertile heuristic across datasets. On
-MATH-500, the trace pattern suggests that prompt-length tertiles often choose
-insufficient caps, while later validity/agreement escalation cannot recover
-the resulting accuracy. Oracle headroom therefore overstates what this tested
-input-only heuristic can realize; it does not establish that stronger learned
-or sequential joint controllers will fail.
+prompt-tertile heuristic across datasets. On MATH-500, prompt-length tertiles
+often choose a low cap, and subsequent sampling under standard decoding does
+not recover the lost accuracy. Oracle headroom therefore overstates what this
+input-only heuristic realizes. It does not determine the performance of a
+learned controller or a controller evaluated entirely with force-answer
+decoding.
 
 The selected GSM8K and MATH policies are evaluated on different tasks and
 token-cap grids and are therefore not directly comparable. The MATH breadth
@@ -769,96 +693,21 @@ paired Test accuracy, significantly for GSM8K $k=1$ and all MATH-500 profiles.
 This supplementary result retains its post-Validation selection disclosure and
 does not revise the frozen primary policy comparison.
 
-\appendix
-\makeatletter
-\setlength{\@fptop}{0pt}
-\makeatother
-\section{Historical Grid Uncertainty}
-
-Table~\ref{tab:historicalci} reports Wilson intervals for the nine historical
-Qwen3-1.7B/GSM8K profiles. Table~\ref{tab:historicalmcnemar} gives every
-pre-specified adjacent depth, adjacent breadth, and equal-budget comparison.
-Holm correction is applied within each comparison family. Complete 14-policy
-Test tables remain available as machine-readable replay CSV files; the main
-paper reports their frontier in Figure~\ref{fig:testpolicyfrontiers} and the
-operating points in Table~\ref{tab:testpolicies}.
-
-\begin{table}[!ht]
-\caption{Historical Qwen3-1.7B/GSM8K accuracy with Wilson 95\% intervals
-($n=99$).}
-\label{tab:historicalci}
-\centering
-\small
-\begin{tabular}{ccrc}
-\toprule
-$k$ & $L$ & Accuracy & Wilson 95\% CI \\
-\midrule
-1 & 512  & 9.1\%  & [4.9\%, 16.4\%] \\
-1 & 1024 & 53.5\% & [43.8\%, 63.0\%] \\
-1 & 2048 & 70.7\% & [61.1\%, 78.8\%] \\
-2 & 512  & 17.2\% & [11.0\%, 25.8\%] \\
-2 & 1024 & 65.7\% & [55.9\%, 74.3\%] \\
-2 & 2048 & 81.8\% & [73.1\%, 88.2\%] \\
-4 & 512  & 28.3\% & [20.4\%, 37.8\%] \\
-4 & 1024 & 71.7\% & [62.2\%, 79.6\%] \\
-4 & 2048 & 83.8\% & [75.3\%, 89.8\%] \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\begin{table}[!ht]
-\caption{Descriptive exact paired McNemar diagnostics for the historical grid
-($n=99$). $A$-only and $B$-only are discordant correctness counts; ``inc.''
-denotes an inconclusive family-wise result at $\alpha=0.05$. Zero $A$-only
-counts are observed in the six nested depth comparisons; only $k=1$
-monotonicity is structurally guaranteed, so the remaining zeros describe this
-realized one-seed pool rather than a general theorem.}
-\label{tab:historicalmcnemar}
-\centering
-\small
-\begin{tabular}{llrrrrc}
-\toprule
-Family & $A\rightarrow B$ & $A$-only & $B$-only & Exact $p$ & Holm $p$ & Result \\
-\midrule
-Depth & $1{\times}512\rightarrow1{\times}1024$ & 0 & 44 & 1.14e-13 & 5.68e-13 & sig. \\
-Depth & $1{\times}1024\rightarrow1{\times}2048$ & 0 & 17 & 1.53e-5 & 4.58e-5 & sig. \\
-Depth & $2{\times}512\rightarrow2{\times}1024$ & 0 & 48 & 7.11e-15 & 4.26e-14 & sig. \\
-Depth & $2{\times}1024\rightarrow2{\times}2048$ & 0 & 16 & 3.05e-5 & 6.10e-5 & sig. \\
-Depth & $4{\times}512\rightarrow4{\times}1024$ & 0 & 43 & 2.27e-13 & 9.09e-13 & sig. \\
-Depth & $4{\times}1024\rightarrow4{\times}2048$ & 0 & 12 & 4.88e-4 & 4.88e-4 & sig. \\
-\midrule
-Breadth & $1{\times}512\rightarrow2{\times}512$ & 0 & 8 & 0.0078 & 0.0234 & sig. \\
-Breadth & $2{\times}512\rightarrow4{\times}512$ & 0 & 11 & 0.0010 & 0.0049 & sig. \\
-Breadth & $1{\times}1024\rightarrow2{\times}1024$ & 0 & 12 & 0.0005 & 0.0029 & sig. \\
-Breadth & $2{\times}1024\rightarrow4{\times}1024$ & 0 & 6 & 0.0313 & 0.0625 & inc. \\
-Breadth & $1{\times}2048\rightarrow2{\times}2048$ & 0 & 11 & 0.0010 & 0.0049 & sig. \\
-Breadth & $2{\times}2048\rightarrow4{\times}2048$ & 0 & 2 & 0.5000 & 0.5000 & inc. \\
-\midrule
-Equal budget & $4{\times}512\rightarrow2{\times}1024$ & 1 & 38 & 1.46e-10 & 3.94e-10 & sig. \\
-Equal budget & $4{\times}512\rightarrow1{\times}2048$ & 3 & 45 & 1.31e-10 & 3.94e-10 & sig. \\
-Equal budget & $2{\times}1024\rightarrow1{\times}2048$ & 8 & 13 & 0.3833 & 0.3833 & inc. \\
-\bottomrule
-\end{tabular}
-\end{table}
-
 \section*{Artifact Availability}
 
-The core generation, parsing, analysis, and frozen policy-replay code used for
-the primary results is publicly available at
-\url{https://github.com/taiphung143/DACNTT} (commit
-\texttt{cd55d239a8ac1bb3f403bc70f5a611986c2ee321}). This public commit contains
-the core pipeline and frozen split definitions, but not the large primary raw
-generations or the local dated freeze/replay directories. Those local manifests
-bind split IDs, software, prompts, parsers, and result tables by SHA-256, and all
-referenced file hashes were rechecked; however, their freeze dates are
-author-maintained records rather than independently timestamped registrations.
-The later force-answer implementation and raw generations are likewise
-preserved locally by hashed manifests but are not in the cited public commit.
+The project repository at \url{https://github.com/taiphung143/DACNTT} is not
+publicly accessible as of 25 November 2026. The previously cited commit
+\texttt{cd55d239a8ac1bb3f403bc70f5a611986c2ee321} exists in the local history and
+is an ancestor of the current working revision, but it omits later controller,
+force-answer, audit, and manuscript changes. A local reproducibility package
+contains the replay code, split and policy manifests, result tables,
+prediction-level traces, audit outputs, and SHA-256 manifest used for this
+revision. Raw generations and author-maintained freeze records remain local;
+they are available to reviewers on request, subject to distribution review.
+No independent time-stamped registration or archival DOI is claimed.
 
 \begin{credits}
-\noindent\textbf{Acknowledgements.} The authors thank the Faculty of
-Information Technology at Ton Duc Thang University for supervision and
-research support. \textbf{Disclosure of Interests.} The authors have no
+\noindent\textbf{Disclosure of Interests.} The authors have no
 competing interests relevant to this article. \textbf{Use of Generative AI.}
 Generative AI tools assisted language editing and software development. The
 authors executed the experiments, verified the artifacts and references, and
@@ -935,7 +784,7 @@ self-consistency for multi-step reasoning. ICLR (2024), arXiv:2401.10480
 
 \bibitem{fu2025certaindex}
 Fu, Y., Chen, J., Zhu, S., et al.: Efficiently scaling LLM reasoning with
-Certaindex. arXiv:2412.20993 (2025)
+Certaindex. arXiv:2412.20993 (2024)
 
 \bibitem{wu2025moreless}
 Wu, Y., Wang, Y., Ye, Z., Du, T., Jegelka, S., Wang, Y.: When more is less:
@@ -971,7 +820,7 @@ arXiv:2110.14168 (2021)
 
 \bibitem{hendrycks2021math}
 Hendrycks, D., et al.: Measuring mathematical problem solving with the MATH
-dataset. NeurIPS Datasets and Benchmarks (2021)
+dataset. NeurIPS Datasets and Benchmarks (2021), arXiv:2103.03874
 
 \end{thebibliography}
 }

@@ -1,0 +1,64 @@
+{
+  "schema_version": 3,
+  "decision_feature_names": [
+    "feature_prompt_token_count",
+    "feature_train_tertile_low",
+    "feature_train_tertile_high",
+    "feature_state1_answer_valid",
+    "feature_state1_truncated",
+    "feature_state1_actual_tokens",
+    "feature_state2_observed",
+    "feature_state2_two_valid",
+    "feature_state2_answers_match"
+  ],
+  "decision_columns": [
+    "decision_selected_L",
+    "decision_selected_k",
+    "decision_stop_reason",
+    "decision_paid_sample_ids"
+  ],
+  "outcome_columns": [
+    "outcome_final_answer",
+    "outcome_final_valid",
+    "outcome_correct",
+    "outcome_valid_answer_count",
+    "outcome_invalid_answer_count",
+    "outcome_agreement",
+    "outcome_actual_generated_tokens",
+    "outcome_allocated_token_budget",
+    "outcome_total_prompt_tokens",
+    "outcome_latency_ms",
+    "outcome_sample_truncation_count",
+    "outcome_sample_parse_failure_count"
+  ],
+  "forbidden_as_decision_inputs": [
+    "outcome_final_answer",
+    "outcome_final_valid",
+    "outcome_correct",
+    "outcome_valid_answer_count",
+    "outcome_invalid_answer_count",
+    "outcome_agreement",
+    "outcome_actual_generated_tokens",
+    "outcome_allocated_token_budget",
+    "outcome_total_prompt_tokens",
+    "outcome_latency_ms",
+    "outcome_sample_truncation_count",
+    "outcome_sample_parse_failure_count"
+  ],
+  "feature_availability": {
+    "before_generation": [
+      "feature_prompt_token_count",
+      "feature_train_tertile_low",
+      "feature_train_tertile_high"
+    ],
+    "after_paid_sample_1": [
+      "feature_state1_answer_valid",
+      "feature_state1_truncated",
+      "feature_state1_actual_tokens"
+    ],
+    "after_paid_sample_2": [
+      "feature_state2_two_valid",
+      "feature_state2_answers_match"
+    ]
+  }
+}

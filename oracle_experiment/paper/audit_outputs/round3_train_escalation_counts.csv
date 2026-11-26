@@ -1,0 +1,17 @@
+dataset,family,stage,lambda,eligible_n,positive_escalation_label_n,negative_escalation_label_n,correctness_gain_n,correctness_regression_n,correctness_unchanged_n,meets_30_positive_floor,source_path
+GSM8K,depth,depth_L1024_to_L2048,0.05,79,6,73,6,0,73,False,results/phase2/qwen3_0_6b_gsm8k_n79_sequential_labels_v1/depth_marginal_utility_labels.csv
+GSM8K,depth,depth_L512_to_L1024,0.05,79,15,64,15,0,64,False,results/phase2/qwen3_0_6b_gsm8k_n79_sequential_labels_v1/depth_marginal_utility_labels.csv
+GSM8K,breadth,breadth_L1024_k1_to_k2,0.05,79,5,74,5,0,74,False,results/phase2/qwen3_0_6b_gsm8k_n79_sequential_labels_v1/breadth_marginal_utility_labels.csv
+GSM8K,breadth,breadth_L1024_k2_to_k4,0.05,79,3,76,3,1,75,False,results/phase2/qwen3_0_6b_gsm8k_n79_sequential_labels_v1/breadth_marginal_utility_labels.csv
+GSM8K,breadth,breadth_L2048_k1_to_k2,0.05,79,3,76,3,0,76,False,results/phase2/qwen3_0_6b_gsm8k_n79_sequential_labels_v1/breadth_marginal_utility_labels.csv
+GSM8K,breadth,breadth_L2048_k2_to_k4,0.05,79,4,75,4,2,73,False,results/phase2/qwen3_0_6b_gsm8k_n79_sequential_labels_v1/breadth_marginal_utility_labels.csv
+GSM8K,breadth,breadth_L512_k1_to_k2,0.05,79,7,72,7,0,72,False,results/phase2/qwen3_0_6b_gsm8k_n79_sequential_labels_v1/breadth_marginal_utility_labels.csv
+GSM8K,breadth,breadth_L512_k2_to_k4,0.05,79,8,71,8,0,71,False,results/phase2/qwen3_0_6b_gsm8k_n79_sequential_labels_v1/breadth_marginal_utility_labels.csv
+MATH-500,depth,depth_L1024_to_L2048,0.05,80,22,58,22,0,58,False,results/phase2/qwen3_0_6b_math500_train_n80_sequential_labels_v1/depth_marginal_utility_labels.csv
+MATH-500,depth,depth_L2048_to_L4096,0.05,80,8,72,8,0,72,False,results/phase2/qwen3_0_6b_math500_train_n80_sequential_labels_v1/depth_marginal_utility_labels.csv
+MATH-500,breadth,breadth_L1024_k1_to_k2,0.05,80,10,70,10,0,70,False,results/phase2/qwen3_0_6b_math500_train_n80_sequential_labels_v1/breadth_marginal_utility_labels.csv
+MATH-500,breadth,breadth_L1024_k2_to_k4,0.05,80,2,78,2,0,78,False,results/phase2/qwen3_0_6b_math500_train_n80_sequential_labels_v1/breadth_marginal_utility_labels.csv
+MATH-500,breadth,breadth_L2048_k1_to_k2,0.05,80,2,78,2,0,78,False,results/phase2/qwen3_0_6b_math500_train_n80_sequential_labels_v1/breadth_marginal_utility_labels.csv
+MATH-500,breadth,breadth_L2048_k2_to_k4,0.05,80,6,74,6,0,74,False,results/phase2/qwen3_0_6b_math500_train_n80_sequential_labels_v1/breadth_marginal_utility_labels.csv
+MATH-500,breadth,breadth_L4096_k1_to_k2,0.05,80,4,76,4,0,76,False,results/phase2/qwen3_0_6b_math500_train_n80_sequential_labels_v1/breadth_marginal_utility_labels.csv
+MATH-500,breadth,breadth_L4096_k2_to_k4,0.05,80,5,75,5,0,75,False,results/phase2/qwen3_0_6b_math500_train_n80_sequential_labels_v1/breadth_marginal_utility_labels.csv

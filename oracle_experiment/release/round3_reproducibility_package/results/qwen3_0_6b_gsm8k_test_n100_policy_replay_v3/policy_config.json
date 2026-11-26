@@ -1,0 +1,26 @@
+{
+  "schema_version": 3,
+  "heuristic_policy_id": "depth_first_tertile_validity_agreement_v1",
+  "heuristic_policy_rule": "inclusive Train prompt-token tertiles choose ordered L; stop at k=1 only for a valid non-truncated final answer; stop at k=2 only for two matching valid answers; otherwise acquire k=4",
+  "depth_only_policy_id": "depth_only_input_tertile_k1_v1",
+  "depth_only_policy_rule": "Train prompt-token tertiles choose L; always use k=1",
+  "breadth_only_policy_rule": "fixed L; always acquire two samples; stop for two matching valid answers; otherwise acquire samples 3-4",
+  "tertile_method": "statistics.quantiles(n=3, method='inclusive')",
+  "tertile_fit_partition": "train",
+  "prompt_token_tertile_low": 117.0,
+  "prompt_token_tertile_high": 132.0,
+  "depth_mapping": {
+    "prompt_tokens <= 117": 512,
+    "117 < prompt_tokens <= 132": 1024,
+    "prompt_tokens > 132": 2048
+  },
+  "breadth_actions": [
+    1,
+    2,
+    4
+  ],
+  "cost_metric": "all actual generated tokens from every paid sample",
+  "paired_bootstrap_repetitions": 10000,
+  "paired_bootstrap_seed_policy": "policy-replay-v3|42|comparison|metric",
+  "paired_accuracy_test": "two-sided exact McNemar with Holm correction"
+}
