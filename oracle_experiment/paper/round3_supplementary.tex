@@ -4,6 +4,9 @@
 \usepackage{graphicx}
 \usepackage{array}
 \setlength{\emergencystretch}{2em}
+\renewcommand{\thesection}{S\arabic{section}}
+\renewcommand{\thefigure}{S\arabic{figure}}
+\renewcommand{\thetable}{S\arabic{table}}
 
 \begin{document}
 \title{Supplementary Material: Adaptive Test-Time Compute for Small Reasoning Models}
@@ -13,7 +16,7 @@
 \institute{Faculty of Information Technology, Ton Duc Thang University, Ho Chi Minh City, Vietnam}
 \maketitle
 
-\section{S1. Historical Qwen3-1.7B Characterization}
+\section{Historical Qwen3-1.7B Characterization}
 
 These figures report the historical GSM8K grid on 99 included problems and
 one stochastic generation seed. They motivate the later staged policy design
@@ -50,7 +53,7 @@ $k$ & $L$ & Accuracy & Wilson 95\% CI & $k$ & $L$ & Accuracy & Wilson 95\% CI \\
 \end{tabular}
 \end{table}
 
-\section{S2. Historical Paired Diagnostics}
+\section{Historical Paired Diagnostics}
 
 Table S2 reports exact paired McNemar diagnostics. Holm correction is applied
 separately to adjacent-depth, adjacent-breadth, and equal-budget families.
@@ -87,7 +90,7 @@ Equal budget & $2{\times}1024\rightarrow1{\times}2048$ & 8 & 13 & 0.3833 & 0.383
 \end{table}
 
 \clearpage
-\section{S3. Non-Thinking Validation Control}
+\section{Non-Thinking Validation Control}
 
 This post-primary control uses the same frozen Validation-20 problems, model
 revision, prompts, sampling settings, and high cap. It did not access or alter
@@ -112,7 +115,7 @@ MATH & $(4,4096)$ & 13/20; 8,979.10 & 11/20; 1,972.50 & 78.03\% \\
 \end{tabular}
 \end{table}
 
-\section{S4. Complete Agreement-Stopping Measurements}
+\section{Complete Agreement-Stopping Measurements}
 
 \begin{table}[!ht]
 \centering

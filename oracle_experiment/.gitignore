@@ -1,1 +1,46 @@
 *.zip
+
+# Python-generated state
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Local environments and dependency trees
+.venv/
+venv/
+env/
+node_modules/
+
+# Local secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Generated workspaces and document intermediates
+.artifact_work/
+tmp/
+.chart-data-*/
+paper/build/
+download.txt
+*.aux
+*.log
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+
+# Primary raw generations/results stay local. Curated release traces live under release/.
+results/
+
+# Editor and operating-system state
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

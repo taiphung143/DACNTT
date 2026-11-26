@@ -41,4 +41,15 @@ Date: 2026-11-25
 - `python scripts/final_scientific_audit.py`: all reconciliation/hash flags true.
 - `python scripts/round3_reviewer_audit.py`: all round-3 checks true.
 - Tectonic build: main 15 pages; supplementary 3 pages; no overfull box, missing figure, undefined citation, or undefined reference.
+
+## Final pre-publication addendum (2026-11-26)
+
+- Removed the remaining same-family overclaim (“second small-model family”).
+- Corrected supplementary numbering to S1–S4 for sections/tables/figures.
+- Rebuilt and visually inspected all 15 main and 3 supplementary pages.
+- Rechecked Table 2 spacing and Figure 2 readability without changing data.
+- Confirmed 205 tests pass and both scientific audits pass after repository cleanup.
+- Venue-policy compliance remains author-controlled: ICCIES prohibits AI-generated
+  text and accepts a single PDF, so separate supplementary acceptance and final
+  prose compliance require explicit confirmation.
 - Visual inspection: all 18 pages rendered; tables, figures, headers, footers, page numbers, and references are readable and unclipped.

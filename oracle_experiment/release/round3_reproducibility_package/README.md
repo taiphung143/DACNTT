@@ -13,7 +13,10 @@ Contents:
 - `audit_outputs/`: paper-facing verification tables.
 - `REPLAY_GUIDE.md`: commands for GPU-free verification.
 - `MISSING_OR_RESTRICTED_ARTIFACTS.md`: explicit reproducibility limits.
+- `SOURCE_PROVENANCE.json`: base Git revision and hashes of packaged source.
 - `MANIFEST_SHA256.csv`: path, size, and SHA-256 for every packaged file.
 
-The package is not a public release. Dataset redistribution rights and raw
-model-output distribution must be checked before publication.
+The package verifies reproducibility Level 1 (checksums) and Level 2
+(CSV/trace-based paper results). It does not provide Level 3 replay from full
+raw generations. The package is not a public release. Dataset redistribution
+rights and raw-model-output distribution must be checked before publication.

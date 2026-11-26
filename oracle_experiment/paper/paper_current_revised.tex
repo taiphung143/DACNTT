@@ -110,8 +110,8 @@ baselines?
 \end{quote}
 
 Supporting questions examine when selective breadth adds value beyond adaptive
-depth and whether decisions remain stable across reasoning datasets and a
-second small-model family. This study contributes: (i) a reproducible
+depth and whether decisions remain stable across the two reasoning datasets.
+This study contributes: (i) a reproducible
 breadth--token-cap evaluation pipeline with realized-cost accounting and exact
 replay; (ii) held-out comparisons of 14 frozen policies on GSM8K and
 MATH-500; (iii) a structural analysis of the two-sample agreement rule together
@@ -571,8 +571,8 @@ force-only correct discordances. Holm correction is within dataset over
 $k=\{1,2,4\}$.}
 \label{tab:forceanswertest}
 \footnotesize
-\setlength{\tabcolsep}{4.5pt}
-\begin{tabular}{llrr@{\hspace{5pt}}rrrr}
+\setlength{\tabcolsep}{4.8pt}
+\begin{tabular}{llr@{\hspace{6pt}}r@{\hspace{6pt}}rrrr}
 \toprule
 Data & $(k,L)$ & Standard & Force & $\Delta$ (pp) & S/F & Token saving & Holm $p$ \\
 \midrule

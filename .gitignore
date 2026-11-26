@@ -1,11 +1,40 @@
-﻿*.zip
+*.zip
 *.log
 *.py[cod]
 **/__pycache__/
 
-oracle_experiment/.artifact_work/docx_deps/
-oracle_experiment/.artifact_work/pdf_deps/
-oracle_experiment/.artifact_work/thesis_pdf_deps/
-oracle_experiment/tmp/pdf_deps/
-oracle_experiment/tmp/pdf_render_deps/
+# Python-generated state
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Local environments and package trees
+.venv/
+venv/
+env/
+node_modules/
+
+# Local secrets (keep an explicit example file publishable)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Editor and operating-system state
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Project-local generated workspaces and review material
+oracle_experiment/.artifact_work/
+oracle_experiment/tmp/
+oracle_experiment/.chart-data-*/
+oracle_experiment/paper/build/
+oracle_experiment/download.txt
 oracle_experiment/results/

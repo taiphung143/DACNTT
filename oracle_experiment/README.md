@@ -107,8 +107,10 @@ launching GPU inference. This pilot is development evidence, not a held-out
 MATH result.
 
 The subsequent 0.6B study uses the frozen split
-`data/splits/math500_split_v1.json`: 80 Train, 20 Validation, and 100 unopened
-Test problems. Its first 30 Train problems are exactly the completed pilot.
+`data/splits/math500_split_v1.json`: 80 Train, 20 Validation, and 100 Test
+problems. Its first 30 Train problems are exactly the completed pilot. The Test
+partition was subsequently evaluated once under the frozen policy protocol;
+it is no longer unopened and must not be reused for controller tuning.
 Create or validate it with:
 
 ```bash
@@ -292,6 +294,18 @@ local package can be rebuilt with:
 python scripts/build_round3_release_package.py
 ```
 
+The builder uses a fresh staging directory, verifies its checksum manifest,
+and only then replaces the prior candidate. Verify the resulting package from
+inside its own directory, without repository data, using:
+
+```bash
+python code/scripts/verify_round3_release.py --package .
+```
+
+This standalone command validates checksums and CSV/trace-derived results
+(reproducibility Levels 1--2). Full raw-generation replay remains unavailable
+because the release candidate intentionally excludes primary raw JSONL.
+
 ## Frozen Phase 2 data split
 
 Phase 2 uses the immutable manifest
@@ -315,10 +329,11 @@ python -m adaptive_compute.cli.run_grid --num-problems 79 \
   --phase2-partition train --validate-only
 ```
 
-Use `--num-problems 20 --phase2-partition validation` for validation. Do not
-generate or inspect the 100-problem test outcomes until the controller and its
-thresholds have been frozen. When a Phase 2 partition is loaded, every current
-question and ground truth is checked against its frozen hash before inference.
+Use `--num-problems 20 --phase2-partition validation` for validation. The
+historical pre-Test rule required freezing the controller and thresholds before
+opening Test; that evaluation is now complete. Do not retune on its outcomes.
+When a Phase 2 partition is loaded, every current question and ground truth is
+checked against its frozen hash before inference.
 
 ## Phase 2 depth-only development baseline
 
@@ -344,7 +359,8 @@ The selected development candidate uses `C=1`, balanced class weights, and a
 0.9 ordered target-depth quantile. On the 20-problem Validation split it matches
 fixed `L=2048` accuracy (13/20) with 1059.45 versus 1213.05 average Actual
 Generated Tokens. This is model-selection evidence on a small Validation set,
-not held-out evidence. The frozen test partition has not been loaded or used.
+not held-out evidence. At selection time the frozen Test partition had not been
+loaded; the later held-out evaluation is reported in the paper and audit files.
 
 Detailed local artifacts are written to `results/phase2/depth_baseline_v1/`,
 including all 18 candidate metrics, validation predictions, the serialized
